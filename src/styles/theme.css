@@ -404,6 +404,12 @@ mark {
   color: var(--text-soft);
 }
 
+.settings-export-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .settings-panel input[type='number'] {
   width: 100%;
   border-radius: 12px;
@@ -422,6 +428,11 @@ mark {
 .status-banner {
   padding: 10px 12px;
   color: var(--text-soft);
+}
+
+.status-banner-success {
+  border-color: rgba(123, 216, 143, 0.3);
+  color: var(--accent);
 }
 
 .status-banner-error {

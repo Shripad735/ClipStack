@@ -139,3 +139,11 @@ export async function updateSettings(settings: AppSettings) {
 
   return invokeCommand<AppSettings>('update_settings', { settings })
 }
+
+export async function exportHistory(format: 'json' | 'csv') {
+  if (!isTauriRuntime()) {
+    throw new Error('Export is only available in the desktop app runtime.')
+  }
+
+  return invokeCommand<string>('export_history', { format })
+}

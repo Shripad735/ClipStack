@@ -11,6 +11,7 @@ import {
   getSettings,
   isTauriRuntime,
   toggleHistoryPin,
+  exportHistory as exportHistoryCommand,
   updateSettings as persistSettings,
 } from '../lib/tauri'
 
@@ -122,5 +123,6 @@ export function useClipboardHistory() {
       await persistSettings(next)
       await refresh()
     },
+    exportHistory: async (format: 'json' | 'csv') => exportHistoryCommand(format),
   }
 }

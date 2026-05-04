@@ -91,7 +91,8 @@ fn main() {
             commands::delete_item,
             commands::clear_unpinned,
             commands::update_settings,
-            commands::hide_overlay
+            commands::hide_overlay,
+            commands::export_history
         ])
         .run(tauri::generate_context!())
         .expect("failed to run ClipStack")

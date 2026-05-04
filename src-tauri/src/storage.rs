@@ -277,6 +277,30 @@ impl Storage {
             .map_err(|error| error.to_string())
     }
 
+    pub fn export_history(&self) -> Result<Vec<ClipboardEntry>, String> {
+        let mut statement = self
+            .connection
+            .prepare(
+                "SELECT MIN(id) AS id,
+                        content,
+                        MAX(created_at) AS created_at,
+                        MAX(pinned) AS pinned,
+                        MAX(last_copied_at) AS last_copied_at,
+                        SUM(COALESCE(copy_count, 1)) AS copy_count
+                 FROM clipboard_entries
+                 GROUP BY content
+                 ORDER BY pinned DESC, created_at DESC",
+            )
+            .map_err(|error| error.to_string())?;
+
+        let rows = statement
+            .query_map([], map_entry)
+            .map_err(|error| error.to_string())?;
+
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|error| error.to_string())
+    }
+
     pub fn get_entry_content(&self, id: i64) -> Result<Option<String>, String> {
         self.connection
             .query_row(

@@ -20,11 +20,13 @@ function App() {
     togglePin,
     clearUnpinned,
     updateSettings,
+    exportHistory,
   } = useClipboardHistory()
   const [query, setQuery] = useState('')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null)
   const [showShortcutHintBar, setShowShortcutHintBar] = useState(true)
+  const [statusMessage, setStatusMessage] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const deferredQuery = useDeferredValue(query)
@@ -64,6 +66,17 @@ function App() {
 
   const handlePin = useEffectEvent(async (id: number) => {
     await togglePin(id)
+  })
+
+  const handleExport = useEffectEvent(async (format: 'json' | 'csv') => {
+    try {
+      const outputPath = await exportHistory(format)
+      setStatusMessage(`Exported ${format.toUpperCase()} to ${outputPath}`)
+    } catch (exportError) {
+      setStatusMessage(
+        exportError instanceof Error ? exportError.message : 'Unable to export history.',
+      )
+    }
   })
 
   const { selectedIndex, setSelectedIndex, onKeyDown, onWindowKeyDown } = useKeyboardNavigation({
@@ -155,6 +168,7 @@ function App() {
       captureEnabled={settings.captureEnabled}
       isSettingsOpen={isSettingsOpen}
       onClearUnpinned={() => void clearUnpinned()}
+      onExportHistory={(format) => void handleExport(format)}
       onRefresh={() => void refresh()}
       onToggleSettings={() => setIsSettingsOpen((open) => !open)}
       settings={settings}
@@ -180,6 +194,7 @@ function App() {
       <div className={`shortcut-hint-bar${showShortcutHintBar ? ' shortcut-hint-bar-visible' : ''}`}>
         P Pin | Ctrl+Shift+P Pin | Del Remove | ↑↓ Navigate | Enter Paste | Space Preview | ? Shortcuts
       </div>
+      {statusMessage ? <div className="status-banner status-banner-success">{statusMessage}</div> : null}
       {error ? <div className="status-banner status-banner-error">{error}</div> : null}
     </OverlayShell>
   )

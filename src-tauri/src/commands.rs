@@ -1,4 +1,6 @@
 use std::sync::atomic::Ordering;
+use std::fs;
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -122,6 +124,39 @@ pub fn hide_overlay(app: AppHandle) -> Result<(), String> {
     window::hide_overlay(&app)
 }
 
+#[tauri::command]
+pub fn export_history(
+    state: State<'_, AppState>,
+    format: Option<String>,
+) -> Result<String, String> {
+    let format = format
+        .unwrap_or_else(|| "json".to_string())
+        .trim()
+        .to_ascii_lowercase();
+
+    let history = {
+        let storage = state.storage.lock().map_err(|error| error.to_string())?;
+        storage.export_history()?
+    };
+
+    let timestamp = crate::settings::current_timestamp_ms();
+    let (extension, content) = match format.as_str() {
+        "csv" => ("csv", to_csv(&history)),
+        "json" => (
+            "json",
+            serde_json::to_string_pretty(&history).map_err(|error| error.to_string())?,
+        ),
+        _ => return Err("unsupported export format".to_string()),
+    };
+
+    let target_dir = dirs::document_dir().unwrap_or_else(|| {
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+    });
+    let output_path = target_dir.join(format!("clipstack-history-{timestamp}.{extension}"));
+    fs::write(&output_path, content).map_err(|error| error.to_string())?;
+    Ok(output_path.to_string_lossy().to_string())
+}
+
 fn send_ctrl_v() -> Result<(), String> {
     #[cfg(windows)]
     {
@@ -151,6 +186,22 @@ fn send_ctrl_v() -> Result<(), String> {
     {
         Err("paste automation is only supported on Windows builds".to_string())
     }
+}
+
+fn to_csv(entries: &[ClipboardEntry]) -> String {
+    let mut output = String::from("id,content,created_at,pinned,last_copied_at,copy_count\n");
+    for entry in entries {
+        let escaped = entry.content.replace('"', "\"\"");
+        let last_copied_at = entry
+            .last_copied_at
+            .map(|value| value.to_string())
+            .unwrap_or_default();
+        output.push_str(&format!(
+            "{},\"{}\",{},{},{},{}\n",
+            entry.id, escaped, entry.created_at, entry.pinned, last_copied_at, entry.copy_count
+        ));
+    }
+    output
 }
 
 #[cfg(windows)]

@@ -11,6 +11,7 @@ type OverlayShellProps = PropsWithChildren<{
   onToggleSettings: () => void
   onRefresh: () => void
   onClearUnpinned: () => void
+  onExportHistory: (format: 'json' | 'csv') => void
   onSettingsChange: (settings: AppSettings) => void
 }>
 
@@ -25,6 +26,7 @@ export function OverlayShell({
   onToggleSettings,
   onRefresh,
   onClearUnpinned,
+  onExportHistory,
   onSettingsChange,
 }: OverlayShellProps) {
   return (
@@ -166,6 +168,22 @@ export function OverlayShell({
             <button className="danger-button" type="button" onClick={onClearUnpinned}>
               Clear unpinned history
             </button>
+            <div className="settings-export-actions">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => onExportHistory('json')}
+              >
+                Export JSON
+              </button>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => onExportHistory('csv')}
+              >
+                Export CSV
+              </button>
+            </div>
           </section>
         ) : (
           children
