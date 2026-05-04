@@ -273,6 +273,19 @@ mark {
   padding-right: 2px;
 }
 
+.history-group {
+  display: grid;
+  gap: 8px;
+}
+
+.history-group-title {
+  margin: 4px 2px 0;
+  color: var(--text-dim);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
 .history-row {
   display: flex;
   justify-content: space-between;
