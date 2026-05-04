@@ -75,16 +75,47 @@ export function useClipboardHistory() {
       await copyHistoryItem(id)
     },
     deleteItem: async (id: number) => {
-      await deleteHistoryItem(id)
-      await refresh()
+      let previous: ClipboardEntry[] = []
+      setHistory((current) => {
+        previous = current
+        return current.filter((item) => item.id !== id)
+      })
+      try {
+        await deleteHistoryItem(id)
+      } catch (deleteError) {
+        setHistory(previous)
+        setError(
+          deleteError instanceof Error ? deleteError.message : 'Unable to delete clipboard item.',
+        )
+      }
     },
     togglePin: async (id: number) => {
-      await toggleHistoryPin(id)
-      await refresh()
+      let previous: ClipboardEntry[] = []
+      setHistory((current) => {
+        previous = current
+        return current.map((item) => (item.id === id ? { ...item, pinned: !item.pinned } : item))
+      })
+      try {
+        await toggleHistoryPin(id)
+      } catch (pinError) {
+        setHistory(previous)
+        setError(pinError instanceof Error ? pinError.message : 'Unable to update pin state.')
+      }
     },
     clearUnpinned: async () => {
-      await clearUnpinnedHistory()
-      await refresh()
+      let previous: ClipboardEntry[] = []
+      setHistory((current) => {
+        previous = current
+        return current.filter((item) => item.pinned)
+      })
+      try {
+        await clearUnpinnedHistory()
+      } catch (clearError) {
+        setHistory(previous)
+        setError(
+          clearError instanceof Error ? clearError.message : 'Unable to clear unpinned history.',
+        )
+      }
     },
     updateSettings: async (next: AppSettings) => {
       setSettings(next)
