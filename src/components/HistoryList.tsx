@@ -19,11 +19,11 @@ type FlatRow =
   | { type: "header"; key: string; title: string }
   | { type: "item"; key: string; item: ClipboardEntry; index: number };
 
-const GROUP_HEADER_HEIGHT = 30;
-const TEXT_ROW_HEIGHT = 150;
-const TEXT_EXPANDED_ROW_HEIGHT = 250;
-const IMAGE_ROW_HEIGHT = 264;
-const IMAGE_EXPANDED_ROW_HEIGHT = 340;
+const GROUP_HEADER_HEIGHT = 22;
+const TEXT_ROW_HEIGHT = 72;
+const TEXT_EXPANDED_ROW_HEIGHT = 172;
+const IMAGE_ROW_HEIGHT = 176;
+const IMAGE_EXPANDED_ROW_HEIGHT = 232;
 const OVERSCAN_ROWS = 5;
 
 function isSameLocalDay(timestamp: number, comparison: Date) {

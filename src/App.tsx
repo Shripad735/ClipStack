@@ -155,23 +155,13 @@ function App() {
   }, [onWindowKeyDown]);
 
   useEffect(() => {
-    const focusSearch = () => {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      });
-    };
-
     const hideOnBlur = () => {
       void hideOverlay();
     };
 
-    focusSearch();
-    window.addEventListener("focus", focusSearch);
     window.addEventListener("blur", hideOnBlur);
 
     return () => {
-      window.removeEventListener("focus", focusSearch);
       window.removeEventListener("blur", hideOnBlur);
     };
   }, []);
@@ -213,6 +203,10 @@ function App() {
             value={query}
             onChange={setQuery}
             onKeyDown={onKeyDown}
+            onFocusRequest={() => {
+              inputRef.current?.focus();
+              inputRef.current?.select();
+            }}
           />
           <HistoryList
             items={filteredHistory}

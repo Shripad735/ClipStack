@@ -1,18 +1,27 @@
-import { forwardRef } from 'react'
-import type { KeyboardEvent } from 'react'
+import { forwardRef } from "react";
+import type { KeyboardEvent } from "react";
 
 type SearchInputProps = {
-  value: string
-  onChange: (value: string) => void
-  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
-}
+  value: string;
+  onChange: (value: string) => void;
+  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onFocusRequest: () => void;
+};
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ value, onChange, onKeyDown }, ref) => (
+  ({ value, onChange, onKeyDown, onFocusRequest }, ref) => (
     <div className="search-shell">
-      <span className="search-prefix">/</span>
+      <button
+        type="button"
+        className="search-focus-button"
+        aria-label="Focus search"
+        onClick={onFocusRequest}
+      >
+        🔍
+      </button>
       <input
         ref={ref}
+        type="search"
         className="search-input"
         placeholder="Search clipboard"
         value={value}
@@ -21,9 +30,9 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         autoComplete="off"
         spellCheck={false}
       />
-      <span className="search-hint">Enter pastes | P pins | Del removes</span>
+      <span className="search-hint">Enter paste | P pin | Del remove</span>
     </div>
   ),
-)
+);
 
-SearchInput.displayName = 'SearchInput'
+SearchInput.displayName = "SearchInput";

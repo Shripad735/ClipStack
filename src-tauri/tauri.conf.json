@@ -14,8 +14,8 @@
       {
         "label": "main",
         "title": "ClipStack",
-        "width": 560,
-        "height": 520,
+        "width": 400,
+        "height": 500,
         "visible": false,
         "decorations": false,
         "alwaysOnTop": true,
@@ -25,7 +25,11 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPDATA/**", "$LOCALDATA/**"]
+      }
     }
   },
   "bundle": {

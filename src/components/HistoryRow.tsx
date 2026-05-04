@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ClipboardEntry } from "../lib/tauri";
 import { resolveClipboardImageSrc } from "../lib/tauri";
 
@@ -272,10 +273,13 @@ export function HistoryRow({
     : null;
   const isLongContent = item.kind === "image" || item.content.length > 180;
   const rowClassName = `history-row${isSelected ? " history-row-selected" : ""}${isExpanded ? " history-row-expanded" : ""}`;
-  const imageSrc = item.imagePath
-    ? resolveClipboardImageSrc(item.imagePath)
-    : null;
+  const imageSrc = resolveClipboardImageSrc(item.imagePath, item.content);
   const imageDimensions = formatImageDimensions(item);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageSrc, item.id]);
 
   return (
     <article
@@ -330,19 +334,29 @@ export function HistoryRow({
             </button>
           ) : null}
         </div>
-        {item.kind === "image" && imageSrc ? (
+        {item.kind === "image" ? (
           <div className="history-image-preview-shell">
-            <img
-              className="history-image-preview"
-              src={imageSrc}
-              alt={item.content || "Clipboard image preview"}
-              loading="lazy"
-            />
+            {imageSrc && !imageFailed ? (
+              <img
+                className="history-image-preview"
+                src={imageSrc}
+                alt={imageDimensions ? `Clipboard image ${imageDimensions}` : "Clipboard image preview"}
+                loading="lazy"
+                onError={() => setImageFailed(true)}
+              />
+            ) : (
+              <div className="history-image-placeholder" role="img" aria-label="Image preview unavailable">
+                <span>Image preview unavailable</span>
+                {imageDimensions ? <small>{imageDimensions}</small> : null}
+              </div>
+            )}
           </div>
         ) : null}
-        <p className="history-content">
-          {highlightContent(item.content, query)}
-        </p>
+        {item.kind !== "image" ? (
+          <p className="history-content">
+            {highlightContent(item.content, query)}
+          </p>
+        ) : null}
       </div>
       <div className="history-row-actions">
         <button

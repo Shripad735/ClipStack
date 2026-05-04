@@ -79,12 +79,36 @@ export function isTauriRuntime() {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-export function resolveClipboardImageSrc(imagePath: string) {
-  if (!isTauriRuntime()) {
-    return imagePath;
+function isProbablyBase64Image(value: string) {
+  return /^[a-z0-9+/=\r\n]+$/i.test(value.trim()) && value.trim().length > 64;
+}
+
+export function resolveClipboardImageSrc(
+  imagePath: string | null,
+  content?: string | null,
+) {
+  const candidate = imagePath?.trim() || content?.trim() || "";
+  if (!candidate) {
+    return null;
   }
 
-  return convertFileSrc(imagePath);
+  if (candidate.startsWith("data:image/")) {
+    return candidate;
+  }
+
+  if (isProbablyBase64Image(candidate)) {
+    return `data:image/png;base64,${candidate.replace(/\s/g, "")}`;
+  }
+
+  if (/^(asset|blob|file|https?|tauri):\/\//i.test(candidate)) {
+    return candidate;
+  }
+
+  if (!isTauriRuntime()) {
+    return candidate;
+  }
+
+  return convertFileSrc(candidate);
 }
 
 async function invokeCommand<T>(

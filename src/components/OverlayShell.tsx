@@ -1,19 +1,20 @@
-import type { PropsWithChildren } from 'react'
-import type { AppSettings } from '../lib/tauri'
+import type { PropsWithChildren } from "react";
+import type { AppSettings } from "../lib/tauri";
+import { hideOverlay } from "../lib/tauri";
 
 type OverlayShellProps = PropsWithChildren<{
-  itemCount: number
-  isDesktop: boolean
-  isLoading: boolean
-  captureEnabled: boolean
-  isSettingsOpen: boolean
-  settings: AppSettings
-  onToggleSettings: () => void
-  onRefresh: () => void
-  onClearUnpinned: () => void
-  onExportHistory: (format: 'json' | 'csv') => void
-  onSettingsChange: (settings: AppSettings) => void
-}>
+  itemCount: number;
+  isDesktop: boolean;
+  isLoading: boolean;
+  captureEnabled: boolean;
+  isSettingsOpen: boolean;
+  settings: AppSettings;
+  onToggleSettings: () => void;
+  onRefresh: () => void;
+  onClearUnpinned: () => void;
+  onExportHistory: (format: "json" | "csv") => void;
+  onSettingsChange: (settings: AppSettings) => void;
+}>;
 
 export function OverlayShell({
   children,
@@ -31,26 +32,43 @@ export function OverlayShell({
 }: OverlayShellProps) {
   return (
     <main className="overlay-root">
-      <section className="overlay-card" aria-label="ClipStack clipboard manager">
+      <section
+        className="overlay-card"
+        aria-label="ClipStack clipboard manager"
+      >
+        <button
+          type="button"
+          className="overlay-close-button"
+          aria-label="Close ClipStack"
+          onClick={() => void hideOverlay()}
+        >
+          ×
+        </button>
         <header className="overlay-header">
-          <div className="header-title-group">
-            <p className="eyebrow">Clipboard</p>
-            <h1>ClipStack</h1>
+          <div className="header-title-group" data-tauri-drag-region>
+            <p className="eyebrow" data-tauri-drag-region>
+              Clipboard
+            </p>
+            <h1 data-tauri-drag-region>ClipStack</h1>
           </div>
           <div className="header-actions">
             <button className="ghost-button" type="button" onClick={onRefresh}>
               Sync
             </button>
-            <button className="ghost-button" type="button" onClick={onToggleSettings}>
-              {isSettingsOpen ? 'Back' : 'Settings'}
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={onToggleSettings}
+            >
+              {isSettingsOpen ? "Back" : "Settings"}
             </button>
           </div>
         </header>
 
         <div className="header-meta">
           <span>{itemCount} items</span>
-          <span>{captureEnabled ? 'Capture on' : 'Capture paused'}</span>
-          <span>{isDesktop ? 'Desktop' : 'Preview'}</span>
+          <span>{captureEnabled ? "Capture on" : "Capture paused"}</span>
+          <span>{isDesktop ? "Desktop" : "Preview"}</span>
           {isLoading ? <span>Loading...</span> : null}
         </div>
 
@@ -165,21 +183,25 @@ export function OverlayShell({
               <h2>Maintenance</h2>
               <p>Clean temporary history while keeping pinned items safe.</p>
             </div>
-            <button className="danger-button" type="button" onClick={onClearUnpinned}>
+            <button
+              className="danger-button"
+              type="button"
+              onClick={onClearUnpinned}
+            >
               Clear unpinned history
             </button>
             <div className="settings-export-actions">
               <button
                 className="ghost-button"
                 type="button"
-                onClick={() => onExportHistory('json')}
+                onClick={() => onExportHistory("json")}
               >
                 Export JSON
               </button>
               <button
                 className="ghost-button"
                 type="button"
-                onClick={() => onExportHistory('csv')}
+                onClick={() => onExportHistory("csv")}
               >
                 Export CSV
               </button>
@@ -190,5 +212,5 @@ export function OverlayShell({
         )}
       </section>
     </main>
-  )
+  );
 }
