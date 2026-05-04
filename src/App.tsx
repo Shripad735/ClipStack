@@ -178,7 +178,7 @@ function App() {
         onTogglePin={(id) => void handlePin(id)}
       />
       <div className={`shortcut-hint-bar${showShortcutHintBar ? ' shortcut-hint-bar-visible' : ''}`}>
-        Ctrl+P Pin | Del Remove | ↑↓ Navigate | Enter Paste | Space Preview | ? Shortcuts
+        P Pin | Ctrl+Shift+P Pin | Del Remove | ↑↓ Navigate | Enter Paste | Space Preview | ? Shortcuts
       </div>
       {error ? <div className="status-banner status-banner-error">{error}</div> : null}
     </OverlayShell>

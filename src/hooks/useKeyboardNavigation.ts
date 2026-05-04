@@ -33,6 +33,7 @@ export function useKeyboardNavigation({
     key: string,
     ctrlKey: boolean,
     metaKey: boolean,
+    shiftKey: boolean,
     preventDefault: () => void,
   ) => {
     const hasSearchText = searchValue.trim().length > 0
@@ -67,7 +68,7 @@ export function useKeyboardNavigation({
         }
         return
       default:
-        if (key.toLowerCase() === 'p' && (ctrlKey || metaKey)) {
+        if (key.toLowerCase() === 'p' && ((ctrlKey || metaKey) ? shiftKey : !hasSearchText)) {
           preventDefault()
           onPin(selectedIndex)
         }
@@ -75,7 +76,7 @@ export function useKeyboardNavigation({
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    handleKey(event.key, event.ctrlKey, event.metaKey, () => event.preventDefault())
+    handleKey(event.key, event.ctrlKey, event.metaKey, event.shiftKey, () => event.preventDefault())
   }
 
   const onWindowKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -93,7 +94,13 @@ export function useKeyboardNavigation({
       }
     }
 
-    handleKey(event.key, event.ctrlKey, event.metaKey, () => event.preventDefault())
+    handleKey(
+      event.key,
+      event.ctrlKey,
+      event.metaKey,
+      event.shiftKey,
+      () => event.preventDefault(),
+    )
   }
 
   return {

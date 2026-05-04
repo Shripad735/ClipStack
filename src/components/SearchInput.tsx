@@ -21,7 +21,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         autoComplete="off"
         spellCheck={false}
       />
-      <span className="search-hint">Enter pastes | Ctrl+P pins | Del removes</span>
+      <span className="search-hint">Enter pastes | P pins | Del removes</span>
     </div>
   ),
 )
