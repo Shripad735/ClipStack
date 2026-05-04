@@ -44,7 +44,7 @@ export function OverlayShell({
         >
           ×
         </button>
-        <header className="overlay-header">
+        <header className="overlay-header" data-tauri-drag-region>
           <div className="header-title-group" data-tauri-drag-region>
             <p className="eyebrow" data-tauri-drag-region>
               Clipboard

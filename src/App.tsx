@@ -37,6 +37,11 @@ function App() {
   const [activeTab, setActiveTab] = useState<"history" | "snippets">("history");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const showToast = (msg: string) => {
+    setStatusMessage(msg);
+    setTimeout(() => setStatusMessage(""), 2500);
+  };
+
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
   const fuse = useMemo(
@@ -81,9 +86,9 @@ function App() {
   const handleExport = useEffectEvent(async (format: "json" | "csv") => {
     try {
       const outputPath = await exportHistory(format);
-      setStatusMessage(`Exported ${format.toUpperCase()} to ${outputPath}`);
+      showToast(`Exported ${format.toUpperCase()} to ${outputPath}`);
     } catch (exportError) {
-      setStatusMessage(
+      showToast(
         exportError instanceof Error
           ? exportError.message
           : "Unable to export history.",
@@ -206,7 +211,7 @@ function App() {
           />
         </div>
       ) : (
-        <SnippetsPanel onStatus={setStatusMessage} />
+        <SnippetsPanel onStatus={showToast} />
       )}
       {activeTab === "history" ? (
         <div

@@ -264,12 +264,20 @@ export function HistoryRow({
               <img
                 className="history-image-preview"
                 src={imageSrc}
-                alt={imageDimensions ? `Clipboard image ${imageDimensions}` : "Clipboard image preview"}
+                alt={
+                  imageDimensions
+                    ? `Clipboard image ${imageDimensions}`
+                    : "Clipboard image preview"
+                }
                 loading="lazy"
                 onError={() => setImageFailed(true)}
               />
             ) : (
-              <div className="history-image-placeholder" role="img" aria-label="Image preview unavailable">
+              <div
+                className="history-image-placeholder"
+                role="img"
+                aria-label="Image preview unavailable"
+              >
                 <span>Image preview unavailable</span>
                 {imageDimensions ? <small>{imageDimensions}</small> : null}
               </div>
@@ -277,7 +285,9 @@ export function HistoryRow({
           </div>
         ) : null}
         {item.kind !== "image" ? (
-          <p className="history-content">
+          <p
+            className={`history-content${meta.type === "url" ? " history-content-url" : ""}`}
+          >
             {highlightContent(item.content, query)}
           </p>
         ) : null}

@@ -59,8 +59,7 @@ mark {
 .overlay-card {
     position: relative;
     width: min(380px, 100%);
-    min-height: 392px;
-    max-height: min(500px, calc(100vh - 16px));
+    max-height: min(520px, calc(100vh - 16px));
     border-radius: 16px;
     border: 1px solid var(--border);
     background: linear-gradient(
@@ -70,7 +69,7 @@ mark {
     );
     backdrop-filter: blur(22px);
     box-shadow: var(--shadow);
-    padding: 12px;
+    padding: 12px 12px 8px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -109,6 +108,12 @@ mark {
     gap: 10px;
     align-items: center;
     padding-right: 28px;
+    -webkit-app-region: drag;
+}
+
+.overlay-header button,
+.overlay-header input {
+    -webkit-app-region: no-drag;
 }
 
 .overlay-header h1 {
@@ -181,8 +186,6 @@ mark {
     fill: currentColor;
 }
 
-
-
 .type-url {
     color: #9bd6ff;
     border-color: rgba(155, 214, 255, 0.35);
@@ -220,8 +223,6 @@ mark {
 .pill-muted {
     color: var(--text-dim);
 }
-
-
 
 .ghost-button,
 .danger-button,
@@ -283,8 +284,6 @@ mark {
     flex-direction: column;
     gap: 6px;
 }
-
-
 
 .search-input {
     border: 0;
@@ -386,11 +385,10 @@ mark {
     display: flex;
     justify-content: space-between;
     gap: 8px;
-    height: calc(100% - 4px);
     border: 1px solid transparent;
     border-left: 3px solid transparent;
     border-radius: 12px;
-    padding: 6px 8px;
+    padding: 10px 12px;
     background: var(--bg-soft);
     overflow: hidden;
     transition:
@@ -429,10 +427,8 @@ mark {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 0;
-    flex: 1;
-    max-height: 100px;
-    border-radius: 10px;
+    width: 100%;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(8, 12, 15, 0.36);
     overflow: hidden;
@@ -440,9 +436,9 @@ mark {
 
 .history-image-preview {
     width: 100%;
-    height: 100%;
-    max-height: 100px;
+    max-height: 110px;
     object-fit: cover;
+    border-radius: 6px;
 }
 
 .history-image-placeholder {
@@ -471,9 +467,14 @@ mark {
     font-size: 0.83rem;
     display: -webkit-box;
     -webkit-box-orient: vertical;
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+
+.history-content-url {
     line-clamp: 2;
     -webkit-line-clamp: 2;
-    overflow: hidden;
 }
 
 .history-row-actions {
@@ -558,9 +559,13 @@ mark {
 }
 
 .snippets-panel {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
+    flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
 }
 
 .snippets-editor {
@@ -572,9 +577,27 @@ mark {
     padding: 10px;
 }
 
+.snippets-save-button {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.78rem;
+    transition:
+        border-color 120ms ease,
+        background 120ms ease;
+}
+
+.snippets-save-button:hover {
+    border-color: var(--accent);
+    background: rgba(123, 216, 143, 0.2);
+}
+
 .snippet-textarea {
     width: 100%;
-    min-height: 90px;
+    min-height: 80px;
     resize: vertical;
     border-radius: 12px;
     border: 1px solid var(--border);
@@ -590,6 +613,105 @@ mark {
     background: rgba(12, 17, 14, 0.84);
     color: #eff8ef;
     padding: 10px 12px;
+}
+
+.snippets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.snippet-row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: var(--bg-soft);
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+        border-color 120ms ease,
+        background 120ms ease;
+}
+
+.snippet-row:hover {
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.snippet-row-main {
+    min-width: 0;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.snippet-row-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.snippet-row-title {
+    margin: 0;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: #f2f5f7;
+}
+
+.snippet-row-title-muted {
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+.snippet-row-content {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.28;
+    color: var(--text-soft);
+    font-size: 0.78rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+.snippet-row-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    align-self: center;
+    flex-wrap: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.snippet-row:hover .snippet-row-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.snippet-copied-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(123, 216, 143, 0.95);
+    color: rgba(16, 18, 20, 0.95);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 10;
 }
 
 .settings-panel input[type="number"] {
