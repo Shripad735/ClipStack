@@ -5,20 +5,11 @@ type SearchInputProps = {
   value: string;
   onChange: (value: string) => void;
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
-  onFocusRequest: () => void;
 };
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ value, onChange, onKeyDown, onFocusRequest }, ref) => (
+  ({ value, onChange, onKeyDown }, ref) => (
     <div className="search-shell">
-      <button
-        type="button"
-        className="search-focus-button"
-        aria-label="Focus search"
-        onClick={onFocusRequest}
-      >
-        🔍
-      </button>
       <input
         ref={ref}
         type="search"

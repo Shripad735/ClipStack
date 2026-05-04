@@ -32,7 +32,6 @@ function App() {
   } = useClipboardHistory();
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
   const [showShortcutHintBar, setShowShortcutHintBar] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
   const [activeTab, setActiveTab] = useState<"history" | "snippets">("history");
@@ -114,14 +113,7 @@ function App() {
           void handlePin(item.id);
         }
       },
-      onSpace: (index) => {
-        const item = filteredHistory[index];
-        if (item) {
-          setExpandedItemId((current) =>
-            current === item.id ? null : item.id,
-          );
-        }
-      },
+      onSpace: () => {},
       onEscape: () => {
         void hideOverlay();
       },
@@ -129,7 +121,6 @@ function App() {
 
   useEffect(() => {
     setSelectedIndex(0);
-    setExpandedItemId(null);
   }, [normalizedQuery, setSelectedIndex]);
 
   useEffect(() => {
@@ -203,20 +194,12 @@ function App() {
             value={query}
             onChange={setQuery}
             onKeyDown={onKeyDown}
-            onFocusRequest={() => {
-              inputRef.current?.focus();
-              inputRef.current?.select();
-            }}
           />
           <HistoryList
             items={filteredHistory}
             query={normalizedQuery}
             selectedIndex={selectedIndex}
-            expandedItemId={expandedItemId}
             onHover={setSelectedIndex}
-            onToggleExpand={(id) =>
-              setExpandedItemId((current) => (current === id ? null : id))
-            }
             onSelect={(id) => void handleSelect(id)}
             onDelete={(id) => void handleDelete(id)}
             onTogglePin={(id) => void handlePin(id)}

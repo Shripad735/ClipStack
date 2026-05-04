@@ -13,6 +13,7 @@
     --border-strong: rgba(255, 255, 255, 0.16);
     --text-soft: #b7c0ca;
     --text-dim: #7f8891;
+    --text-muted: #7f8891;
     --accent: #7bd88f;
     --accent-soft: rgba(123, 216, 143, 0.14);
     --danger: #ff8a7a;
@@ -72,7 +73,7 @@ mark {
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .overlay-close-button {
@@ -120,7 +121,7 @@ mark {
 .header-title-group {
     display: grid;
     min-width: 0;
-    gap: 1px;
+    gap: 0;
     align-items: center;
     justify-items: center;
     text-align: center;
@@ -180,28 +181,7 @@ mark {
     fill: currentColor;
 }
 
-.pill-copy-hint {
-    border-left: 1px solid rgba(255, 255, 255, 0.16);
-    margin-left: 2px;
-    padding-left: 6px;
-    color: var(--text-soft);
-    font-size: 0.7rem;
-    letter-spacing: 0.02em;
-}
 
-.pill-favicon {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    max-width: 140px;
-}
-
-.pill-favicon img {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    flex-shrink: 0;
-}
 
 .type-url {
     color: #9bd6ff;
@@ -237,21 +217,11 @@ mark {
     background: rgba(157, 232, 255, 0.12);
 }
 
-.pill-pinned {
-    color: var(--accent);
-    border-color: rgba(123, 216, 143, 0.26);
-    background: var(--accent-soft);
-}
-
 .pill-muted {
     color: var(--text-dim);
 }
 
-.pill-copy-count {
-    color: #ffd48c;
-    border-color: rgba(255, 212, 140, 0.35);
-    background: rgba(255, 212, 140, 0.12);
-}
+
 
 .ghost-button,
 .danger-button,
@@ -287,7 +257,7 @@ mark {
 
 .search-shell {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
     border-radius: 12px;
@@ -298,7 +268,7 @@ mark {
 
 .tab-strip {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .tab-active {
@@ -311,30 +281,10 @@ mark {
     flex: 1;
     min-height: 0;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
-.search-focus-button {
-    display: inline-grid;
-    width: 24px;
-    height: 24px;
-    place-items: center;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text-soft);
-    font-size: 0.8rem;
-    line-height: 1;
-    transition:
-        background 120ms ease,
-        border-color 120ms ease;
-}
 
-.search-focus-button:hover,
-.search-focus-button:focus-visible {
-    border-color: rgba(123, 216, 143, 0.38);
-    background: var(--accent-soft);
-}
 
 .search-input {
     border: 0;
@@ -414,7 +364,7 @@ mark {
     position: absolute;
     left: 0;
     right: 0;
-    padding-bottom: 6px;
+    padding-bottom: 4px;
 }
 
 .history-list-virtual-header {
@@ -423,23 +373,24 @@ mark {
 }
 
 .history-group-title {
-    margin: 2px 2px 0;
-    color: var(--text-dim);
-    font-size: 0.64rem;
+    margin: 0 2px 4px;
+    color: var(--text-muted);
+    font-size: 10px;
     font-weight: 700;
+    line-height: 1;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
 }
 
 .history-row {
     display: flex;
     justify-content: space-between;
     gap: 8px;
-    height: calc(100% - 6px);
+    height: calc(100% - 4px);
     border: 1px solid transparent;
     border-left: 3px solid transparent;
     border-radius: 12px;
-    padding: 7px 9px;
+    padding: 6px 8px;
     background: var(--bg-soft);
     overflow: hidden;
     transition:
@@ -450,14 +401,14 @@ mark {
 }
 
 .history-row:hover {
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.055);
 }
 
 .history-row-selected {
-    border-color: rgba(123, 216, 143, 0.32);
+    border-color: transparent;
     border-left-color: var(--accent);
-    background: linear-gradient(90deg, rgba(123, 216, 143, 0.16), rgba(255, 255, 255, 0.06));
-    box-shadow: inset 0 0 0 1px rgba(123, 216, 143, 0.08);
+    background: rgba(123, 216, 143, 0.08);
+    box-shadow: none;
 }
 
 .history-row-main {
@@ -465,7 +416,7 @@ mark {
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     overflow: hidden;
 }
 
@@ -480,7 +431,7 @@ mark {
     justify-content: center;
     min-height: 0;
     flex: 1;
-    max-height: 120px;
+    max-height: 100px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(8, 12, 15, 0.36);
@@ -489,8 +440,9 @@ mark {
 
 .history-image-preview {
     width: 100%;
-    max-height: 120px;
-    object-fit: contain;
+    height: 100%;
+    max-height: 100px;
+    object-fit: cover;
 }
 
 .history-image-placeholder {
@@ -519,15 +471,9 @@ mark {
     font-size: 0.83rem;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    line-clamp: 1;
-    -webkit-line-clamp: 1;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-}
-
-.history-row-expanded .history-content {
-    line-clamp: 8;
-    -webkit-line-clamp: 8;
-    overflow: auto;
 }
 
 .history-row-actions {
@@ -535,22 +481,19 @@ mark {
     align-self: center;
     flex-wrap: nowrap;
     opacity: 0;
-    transition: opacity 120ms ease;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
 }
 
 .history-row:hover .history-row-actions,
 .history-row-selected .history-row-actions {
-    opacity: 0.95;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .icon-button {
     padding: 5px 7px;
     font-size: 0.68rem;
-}
-
-.pill-char-count {
-    appearance: none;
-    cursor: pointer;
 }
 
 .empty-state,
@@ -723,7 +666,7 @@ mark {
     }
 
     .search-shell {
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .search-hint {

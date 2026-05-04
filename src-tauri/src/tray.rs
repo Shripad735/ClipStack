@@ -38,7 +38,9 @@ pub fn create_tray(app: &tauri::AppHandle) -> Result<(), String> {
     builder
         .on_menu_event(|app, event| match event.id.as_ref() {
             SHOW_ID => {
-                let _ = window::show_overlay(app);
+                if let Err(error) = window::show_overlay(app) {
+                    eprintln!("failed to show ClipStack from tray menu: {error}");
+                }
             }
             TOGGLE_CAPTURE_ID => {
                 let state = app.state::<AppState>();
@@ -69,7 +71,9 @@ pub fn create_tray(app: &tauri::AppHandle) -> Result<(), String> {
                 ..
             } = event
             {
-                let _ = window::toggle_overlay(&tray.app_handle());
+                if let Err(error) = window::toggle_overlay(&tray.app_handle()) {
+                    eprintln!("failed to toggle ClipStack from tray icon left-click: {error}");
+                }
             }
         })
         .build(app)

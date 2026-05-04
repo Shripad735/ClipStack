@@ -6,9 +6,7 @@ type HistoryRowProps = {
   item: ClipboardEntry;
   query: string;
   isSelected: boolean;
-  isExpanded: boolean;
   onMouseEnter: () => void;
-  onToggleExpand: () => void;
   onSelect: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
@@ -109,14 +107,6 @@ function detectType(item: ClipboardEntry): ContentType {
   return "text";
 }
 
-function getUrlHost(content: string) {
-  try {
-    return new URL(content.trim()).hostname;
-  } catch {
-    return "";
-  }
-}
-
 function contentTypeMeta(item: ClipboardEntry) {
   const type = detectType(item);
   if (type === "image") {
@@ -125,21 +115,14 @@ function contentTypeMeta(item: ClipboardEntry) {
       label: "Image",
       icon: <ImageIcon />,
       accentClass: "type-image",
-      faviconUrl: null,
-      faviconAlt: "",
     };
   }
   if (type === "url") {
-    const host = getUrlHost(item.content);
     return {
       type,
       label: "URL",
       icon: <LinkIcon />,
       accentClass: "type-url",
-      faviconUrl: host
-        ? `https://www.google.com/s2/favicons?sz=64&domain=${host}`
-        : null,
-      faviconAlt: host || "website icon",
     };
   }
   if (type === "code") {
@@ -148,8 +131,6 @@ function contentTypeMeta(item: ClipboardEntry) {
       label: "Code",
       icon: <CodeIcon />,
       accentClass: "type-code",
-      faviconUrl: null,
-      faviconAlt: "",
     };
   }
   if (type === "email") {
@@ -158,8 +139,6 @@ function contentTypeMeta(item: ClipboardEntry) {
       label: "Email",
       icon: <MailIcon />,
       accentClass: "type-email",
-      faviconUrl: null,
-      faviconAlt: "",
     };
   }
   if (type === "filepath") {
@@ -168,8 +147,6 @@ function contentTypeMeta(item: ClipboardEntry) {
       label: "Path",
       icon: <FolderIcon />,
       accentClass: "type-path",
-      faviconUrl: null,
-      faviconAlt: "",
     };
   }
 
@@ -178,19 +155,7 @@ function contentTypeMeta(item: ClipboardEntry) {
     label: "Text",
     icon: <TextIcon />,
     accentClass: "type-text",
-    faviconUrl: null,
-    faviconAlt: "",
   };
-}
-
-function formatCharacterCount(length: number) {
-  if (length >= 1_000_000) {
-    return `${(length / 1_000_000).toFixed(1)}m chars`;
-  }
-  if (length >= 1_000) {
-    return `${(length / 1_000).toFixed(1)}k chars`;
-  }
-  return `${length} chars`;
 }
 
 function highlightContent(content: string, query: string) {
@@ -259,20 +224,14 @@ export function HistoryRow({
   item,
   query,
   isSelected,
-  isExpanded,
   onMouseEnter,
-  onToggleExpand,
   onSelect,
   onDelete,
   onTogglePin,
 }: HistoryRowProps) {
   const meta = contentTypeMeta(item);
   const createdLabel = formatRelativeAge(item.createdAt);
-  const lastUsedLabel = item.lastCopiedAt
-    ? `last used ${formatRelativeAge(item.lastCopiedAt)}`
-    : null;
-  const isLongContent = item.kind === "image" || item.content.length > 180;
-  const rowClassName = `history-row${isSelected ? " history-row-selected" : ""}${isExpanded ? " history-row-expanded" : ""}`;
+  const rowClassName = `history-row${isSelected ? " history-row-selected" : ""}`;
   const imageSrc = resolveClipboardImageSrc(item.imagePath, item.content);
   const imageDimensions = formatImageDimensions(item);
   const [imageFailed, setImageFailed] = useState(false);
@@ -293,46 +252,11 @@ export function HistoryRow({
           <span className={`pill pill-type ${meta.accentClass}`}>
             <span className="type-icon">{meta.icon}</span>
             {meta.label}
-            {meta.type === "code" ? (
-              <span className="pill-copy-hint">copy-ready</span>
-            ) : null}
           </span>
-          {meta.faviconUrl ? (
-            <span className="pill pill-favicon" title={meta.faviconAlt}>
-              <img src={meta.faviconUrl} alt={meta.faviconAlt} loading="lazy" />
-              {meta.faviconAlt}
-            </span>
-          ) : null}
           {imageDimensions ? (
             <span className="pill pill-muted">{imageDimensions}</span>
           ) : null}
           <span className="pill">{createdLabel}</span>
-          {lastUsedLabel ? (
-            <span className="pill pill-muted">{lastUsedLabel}</span>
-          ) : null}
-          {item.copyCount > 1 ? (
-            <span className="pill pill-copy-count">
-              copied {item.copyCount}x
-            </span>
-          ) : null}
-          {item.pinned ? (
-            <span className="pill pill-pinned">Pinned</span>
-          ) : null}
-          {isLongContent ? (
-            <button
-              type="button"
-              className="pill pill-char-count"
-              title="Toggle full preview"
-              onClick={(event) => {
-                event.stopPropagation();
-                onToggleExpand();
-              }}
-            >
-              {item.kind === "image"
-                ? "Preview"
-                : formatCharacterCount(item.content.length)}
-            </button>
-          ) : null}
         </div>
         {item.kind === "image" ? (
           <div className="history-image-preview-shell">

@@ -6,9 +6,7 @@ type HistoryListProps = {
   items: ClipboardEntry[];
   query: string;
   selectedIndex: number;
-  expandedItemId: number | null;
   onHover: (index: number) => void;
-  onToggleExpand: (id: number) => void;
   onSelect: (id: number) => void;
   onDelete: (id: number) => void;
   onTogglePin: (id: number) => void;
@@ -19,11 +17,9 @@ type FlatRow =
   | { type: "header"; key: string; title: string }
   | { type: "item"; key: string; item: ClipboardEntry; index: number };
 
-const GROUP_HEADER_HEIGHT = 22;
-const TEXT_ROW_HEIGHT = 72;
-const TEXT_EXPANDED_ROW_HEIGHT = 172;
-const IMAGE_ROW_HEIGHT = 176;
-const IMAGE_EXPANDED_ROW_HEIGHT = 232;
+const GROUP_HEADER_HEIGHT = 18;
+const TEXT_ROW_HEIGHT = 62;
+const IMAGE_ROW_HEIGHT = 148;
 const OVERSCAN_ROWS = 5;
 
 function isSameLocalDay(timestamp: number, comparison: Date) {
@@ -79,20 +75,12 @@ function buildRows(items: ClipboardEntry[], query: string): FlatRow[] {
   return rows;
 }
 
-function getRowHeight(row: FlatRow, expandedItemId: number | null) {
+function getRowHeight(row: FlatRow) {
   if (row.type === "header") {
     return GROUP_HEADER_HEIGHT;
   }
 
-  if (row.item.kind === "image") {
-    return expandedItemId === row.item.id
-      ? IMAGE_EXPANDED_ROW_HEIGHT
-      : IMAGE_ROW_HEIGHT;
-  }
-
-  return expandedItemId === row.item.id
-    ? TEXT_EXPANDED_ROW_HEIGHT
-    : TEXT_ROW_HEIGHT;
+  return row.item.kind === "image" ? IMAGE_ROW_HEIGHT : TEXT_ROW_HEIGHT;
 }
 
 function findStartIndex(offsets: number[], scrollTop: number) {
@@ -131,9 +119,7 @@ export function HistoryList({
   items,
   query,
   selectedIndex,
-  expandedItemId,
   onHover,
-  onToggleExpand,
   onSelect,
   onDelete,
   onTogglePin,
@@ -144,7 +130,7 @@ export function HistoryList({
 
   const flatRows = useMemo(() => buildRows(items, query), [items, query]);
   const metrics = useMemo(() => {
-    const heights = flatRows.map((row) => getRowHeight(row, expandedItemId));
+    const heights = flatRows.map((row) => getRowHeight(row));
     const offsets = new Array(flatRows.length);
     let runningTotal = 0;
     for (let index = 0; index < flatRows.length; index += 1) {
@@ -153,7 +139,7 @@ export function HistoryList({
     }
 
     return { heights, offsets, totalHeight: runningTotal };
-  }, [expandedItemId, flatRows]);
+  }, [flatRows]);
 
   useLayoutEffect(() => {
     const node = containerRef.current;
@@ -271,9 +257,7 @@ export function HistoryList({
                 item={row.item}
                 query={query}
                 isSelected={row.index === selectedIndex}
-                isExpanded={expandedItemId === row.item.id}
                 onMouseEnter={() => onHover(row.index)}
-                onToggleExpand={() => onToggleExpand(row.item.id)}
                 onSelect={() => onSelect(row.item.id)}
                 onDelete={() => onDelete(row.item.id)}
                 onTogglePin={() => onTogglePin(row.item.id)}
