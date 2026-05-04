@@ -56,14 +56,13 @@ mark {
     flex-direction: column;
     height: 100vh;
     width: 100vw;
-    padding: 8px;
     background: transparent;
 }
 
 .overlay-card {
     position: relative;
     width: 100%;
-    height: 100%;
+    height: 100vh;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: linear-gradient(
@@ -73,10 +72,10 @@ mark {
     );
     backdrop-filter: blur(22px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-    padding: 12px 12px 8px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     overflow: hidden;
 }
 
@@ -95,6 +94,8 @@ mark {
     color: var(--text-dim);
     font-size: 1.05rem;
     line-height: 1;
+    -webkit-app-region: no-drag;
+    cursor: pointer;
     transition:
         background 120ms ease,
         border-color 120ms ease,
@@ -114,11 +115,13 @@ mark {
     align-items: center;
     padding-right: 28px;
     -webkit-app-region: drag;
+    cursor: move;
 }
 
 .overlay-header button,
 .overlay-header input {
     -webkit-app-region: no-drag;
+    cursor: pointer;
 }
 
 .overlay-header h1 {
@@ -129,12 +132,14 @@ mark {
 }
 
 .header-title-group {
-    display: grid;
+    display: flex;
     min-width: 0;
     gap: 0;
     align-items: center;
-    justify-items: center;
-    text-align: center;
+    justify-content: flex-start;
+    -webkit-app-region: drag;
+    cursor: move;
+    flex: 1;
 }
 
 .eyebrow {
@@ -286,7 +291,8 @@ mark {
     flex: 1;
     min-height: 0;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+    overflow: hidden;
 }
 
 .search-input {
@@ -308,10 +314,11 @@ mark {
 
 .history-list {
     position: relative;
-    min-height: 0;
     flex: 1;
-    overflow: auto;
-    padding-right: 2px;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
@@ -366,7 +373,7 @@ mark {
     position: absolute;
     left: 0;
     right: 0;
-    padding-bottom: 6px;
+    width: 100%;
 }
 
 .history-list-virtual-header {
@@ -392,6 +399,7 @@ mark {
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 8px;
     padding: 10px 12px;
+    margin-bottom: 6px;
     background: var(--bg-soft);
     overflow: hidden;
     transition:
@@ -418,7 +426,8 @@ mark {
 .history-row-content-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    flex: 1;
     min-height: 0;
     overflow: hidden;
 }
@@ -482,20 +491,17 @@ mark {
     gap: 6px;
     align-items: center;
     justify-content: flex-end;
-    max-height: 0;
+    height: 28px;
+    margin-top: 4px;
     opacity: 0;
-    overflow: hidden;
-    transition:
-        max-height 0.15s ease,
-        opacity 0.15s ease,
-        margin-top 0.15s ease;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
 }
 
 .history-row:hover .history-row-actions,
 .history-row-selected .history-row-actions {
-    max-height: 36px;
     opacity: 1;
-    margin-top: 4px;
+    pointer-events: auto;
 }
 
 .icon-button {
@@ -528,9 +534,15 @@ mark {
 }
 
 .settings-panel {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     padding: 14px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .settings-group {
@@ -572,6 +584,8 @@ mark {
     min-height: 0;
     overflow-y: auto;
     padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .snippets-editor {
