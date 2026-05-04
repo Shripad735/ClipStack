@@ -59,6 +59,7 @@ mark {
 .overlay-card {
     position: relative;
     width: min(380px, 100%);
+    min-height: 480px;
     max-height: min(520px, calc(100vh - 16px));
     border-radius: 16px;
     border: 1px solid var(--border);
