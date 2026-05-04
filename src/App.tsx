@@ -3,6 +3,7 @@ import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState 
 import { HistoryList } from './components/HistoryList'
 import { OverlayShell } from './components/OverlayShell'
 import { SearchInput } from './components/SearchInput'
+import { SnippetsPanel } from './components/SnippetsPanel'
 import { useClipboardHistory } from './hooks/useClipboardHistory'
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation'
 import { hideOverlay } from './lib/tauri'
@@ -27,6 +28,7 @@ function App() {
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null)
   const [showShortcutHintBar, setShowShortcutHintBar] = useState(true)
   const [statusMessage, setStatusMessage] = useState('')
+  const [activeTab, setActiveTab] = useState<'history' | 'snippets'>('history')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const deferredQuery = useDeferredValue(query)
@@ -174,26 +176,50 @@ function App() {
       settings={settings}
       onSettingsChange={(next) => void updateSettings(next)}
     >
-      <SearchInput
-        ref={inputRef}
-        value={query}
-        onChange={setQuery}
-        onKeyDown={onKeyDown}
-      />
-      <HistoryList
-        items={filteredHistory}
-        query={normalizedQuery}
-        selectedIndex={selectedIndex}
-        expandedItemId={expandedItemId}
-        onHover={setSelectedIndex}
-        onToggleExpand={(id) => setExpandedItemId((current) => (current === id ? null : id))}
-        onSelect={(id) => void handleSelect(id)}
-        onDelete={(id) => void handleDelete(id)}
-        onTogglePin={(id) => void handlePin(id)}
-      />
-      <div className={`shortcut-hint-bar${showShortcutHintBar ? ' shortcut-hint-bar-visible' : ''}`}>
-        P Pin | Ctrl+Shift+P Pin | Del Remove | ↑↓ Navigate | Enter Paste | Space Preview | ? Shortcuts
+      <div className="tab-strip">
+        <button
+          type="button"
+          className={`ghost-button${activeTab === 'history' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          History
+        </button>
+        <button
+          type="button"
+          className={`ghost-button${activeTab === 'snippets' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('snippets')}
+        >
+          Snippets
+        </button>
       </div>
+      {activeTab === 'history' ? (
+        <>
+          <SearchInput
+            ref={inputRef}
+            value={query}
+            onChange={setQuery}
+            onKeyDown={onKeyDown}
+          />
+          <HistoryList
+            items={filteredHistory}
+            query={normalizedQuery}
+            selectedIndex={selectedIndex}
+            expandedItemId={expandedItemId}
+            onHover={setSelectedIndex}
+            onToggleExpand={(id) => setExpandedItemId((current) => (current === id ? null : id))}
+            onSelect={(id) => void handleSelect(id)}
+            onDelete={(id) => void handleDelete(id)}
+            onTogglePin={(id) => void handlePin(id)}
+          />
+        </>
+      ) : (
+        <SnippetsPanel onStatus={setStatusMessage} />
+      )}
+      {activeTab === 'history' ? (
+        <div className={`shortcut-hint-bar${showShortcutHintBar ? ' shortcut-hint-bar-visible' : ''}`}>
+          P Pin | Ctrl+Shift+P Pin | Del Remove | ↑↓ Navigate | Enter Paste | Space Preview | ? Shortcuts
+        </div>
+      ) : null}
       {statusMessage ? <div className="status-banner status-banner-success">{statusMessage}</div> : null}
       {error ? <div className="status-banner status-banner-error">{error}</div> : null}
     </OverlayShell>

@@ -248,6 +248,16 @@ mark {
   padding: 10px 12px;
 }
 
+.tab-strip {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .search-prefix {
   font-size: 1.1rem;
   color: var(--accent);
@@ -408,6 +418,41 @@ mark {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.snippets-panel {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+}
+
+.snippets-editor {
+  display: grid;
+  gap: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 10px;
+}
+
+.snippet-textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(12, 17, 14, 0.84);
+  color: #eff8ef;
+  padding: 10px 12px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+.snippet-title-input {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(12, 17, 14, 0.84);
+  color: #eff8ef;
+  padding: 10px 12px;
 }
 
 .settings-panel input[type='number'] {
