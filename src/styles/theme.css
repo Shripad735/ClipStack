@@ -196,6 +196,10 @@ mark {
   background: var(--accent-soft);
 }
 
+.pill-muted {
+  color: var(--text-dim);
+}
+
 .ghost-button,
 .danger-button,
 .icon-button {

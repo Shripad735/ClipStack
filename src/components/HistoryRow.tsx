@@ -147,13 +147,37 @@ function highlightContent(content: string, query: string) {
   )
 }
 
-function formatTimestamp(timestamp: number) {
+function formatAbsoluteTimestamp(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(timestamp))
+}
+
+function formatRelativeAge(timestamp: number) {
+  const now = Date.now()
+  const diffMs = Math.max(0, now - timestamp)
+  const minute = 60_000
+  const hour = 60 * minute
+  const day = 24 * hour
+
+  if (diffMs < minute) {
+    return 'just now'
+  }
+  if (diffMs < hour) {
+    const minutes = Math.floor(diffMs / minute)
+    return `${minutes} min ago`
+  }
+  if (diffMs < day) {
+    const hours = Math.floor(diffMs / hour)
+    return `${hours} hr ago`
+  }
+  if (diffMs < 2 * day) {
+    return `Yesterday, ${new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(timestamp))}`
+  }
+  return formatAbsoluteTimestamp(timestamp)
 }
 
 export function HistoryRow({
@@ -166,6 +190,8 @@ export function HistoryRow({
   onTogglePin,
 }: HistoryRowProps) {
   const meta = contentTypeMeta(item.content)
+  const createdLabel = formatRelativeAge(item.createdAt)
+  const lastUsedLabel = item.lastCopiedAt ? `last used ${formatRelativeAge(item.lastCopiedAt)}` : null
 
   return (
     <article
@@ -187,7 +213,8 @@ export function HistoryRow({
               {meta.faviconAlt}
             </span>
           ) : null}
-          <span className="pill">{formatTimestamp(item.createdAt)}</span>
+          <span className="pill">{createdLabel}</span>
+          {lastUsedLabel ? <span className="pill pill-muted">{lastUsedLabel}</span> : null}
           {item.pinned ? <span className="pill pill-pinned">Pinned</span> : null}
         </div>
         <p className="history-content">{highlightContent(item.content, query)}</p>
