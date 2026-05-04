@@ -310,6 +310,12 @@ mark {
   overflow: hidden;
 }
 
+.history-row:hover .history-content,
+.history-row-expanded .history-content {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
 .history-row-actions {
   align-items: center;
   opacity: 0.92;
@@ -317,6 +323,11 @@ mark {
 
 .icon-button {
   padding: 7px 10px;
+}
+
+.pill-char-count {
+  appearance: none;
+  cursor: pointer;
 }
 
 .empty-state,

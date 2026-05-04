@@ -4,7 +4,9 @@ type HistoryRowProps = {
   item: ClipboardEntry
   query: string
   isSelected: boolean
+  isExpanded: boolean
   onMouseEnter: () => void
+  onToggleExpand: () => void
   onSelect: () => void
   onDelete: () => void
   onTogglePin: () => void
@@ -126,6 +128,16 @@ function contentTypeMeta(content: string) {
   return { type, label: 'Text', icon: <TextIcon />, accentClass: 'type-text', faviconUrl: null, faviconAlt: '' }
 }
 
+function formatCharacterCount(length: number) {
+  if (length >= 1_000_000) {
+    return `${(length / 1_000_000).toFixed(1)}m chars`
+  }
+  if (length >= 1_000) {
+    return `${(length / 1_000).toFixed(1)}k chars`
+  }
+  return `${length} chars`
+}
+
 function highlightContent(content: string, query: string) {
   if (!query) {
     return content
@@ -184,7 +196,9 @@ export function HistoryRow({
   item,
   query,
   isSelected,
+  isExpanded,
   onMouseEnter,
+  onToggleExpand,
   onSelect,
   onDelete,
   onTogglePin,
@@ -192,11 +206,13 @@ export function HistoryRow({
   const meta = contentTypeMeta(item.content)
   const createdLabel = formatRelativeAge(item.createdAt)
   const lastUsedLabel = item.lastCopiedAt ? `last used ${formatRelativeAge(item.lastCopiedAt)}` : null
+  const isLongContent = item.content.length > 180
+  const rowClassName = `history-row${isSelected ? ' history-row-selected' : ''}${isExpanded ? ' history-row-expanded' : ''}`
 
   return (
     <article
       id={String(item.id)}
-      className={`history-row${isSelected ? ' history-row-selected' : ''}`}
+      className={rowClassName}
       onMouseEnter={onMouseEnter}
       onClick={onSelect}
     >
@@ -216,6 +232,19 @@ export function HistoryRow({
           <span className="pill">{createdLabel}</span>
           {lastUsedLabel ? <span className="pill pill-muted">{lastUsedLabel}</span> : null}
           {item.pinned ? <span className="pill pill-pinned">Pinned</span> : null}
+          {isLongContent ? (
+            <button
+              type="button"
+              className="pill pill-char-count"
+              title="Toggle full preview"
+              onClick={(event) => {
+                event.stopPropagation()
+                onToggleExpand()
+              }}
+            >
+              {formatCharacterCount(item.content.length)}
+            </button>
+          ) : null}
         </div>
         <p className="history-content">{highlightContent(item.content, query)}</p>
       </div>

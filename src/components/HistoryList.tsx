@@ -5,7 +5,9 @@ type HistoryListProps = {
   items: ClipboardEntry[]
   query: string
   selectedIndex: number
+  expandedItemId: number | null
   onHover: (index: number) => void
+  onToggleExpand: (id: number) => void
   onSelect: (id: number) => void
   onDelete: (id: number) => void
   onTogglePin: (id: number) => void
@@ -15,7 +17,9 @@ export function HistoryList({
   items,
   query,
   selectedIndex,
+  expandedItemId,
   onHover,
+  onToggleExpand,
   onSelect,
   onDelete,
   onTogglePin,
@@ -41,7 +45,9 @@ export function HistoryList({
           item={item}
           query={query}
           isSelected={index === selectedIndex}
+          isExpanded={expandedItemId === item.id}
           onMouseEnter={() => onHover(index)}
+          onToggleExpand={() => onToggleExpand(item.id)}
           onSelect={() => onSelect(item.id)}
           onDelete={() => onDelete(item.id)}
           onTogglePin={() => onTogglePin(item.id)}

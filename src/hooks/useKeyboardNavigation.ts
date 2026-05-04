@@ -7,6 +7,7 @@ type UseKeyboardNavigationOptions = {
   onEnter: (index: number) => void
   onDelete: (index: number) => void
   onPin: (index: number) => void
+  onSpace: (index: number) => void
   onEscape: () => void
 }
 
@@ -16,6 +17,7 @@ export function useKeyboardNavigation({
   onEnter,
   onDelete,
   onPin,
+  onSpace,
   onEscape,
 }: UseKeyboardNavigationOptions) {
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -52,6 +54,12 @@ export function useKeyboardNavigation({
       case 'Escape':
         event.preventDefault()
         onEscape()
+        break
+      case ' ':
+        if (!hasSearchText) {
+          event.preventDefault()
+          onSpace(selectedIndex)
+        }
         break
       default:
         if (event.key.toLowerCase() === 'p' && (event.ctrlKey || event.metaKey)) {

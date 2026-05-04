@@ -22,6 +22,7 @@ function App() {
   } = useClipboardHistory()
   const [query, setQuery] = useState('')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [expandedItemId, setExpandedItemId] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const deferredQuery = useDeferredValue(query)
@@ -64,6 +65,12 @@ function App() {
         void handlePin(item.id)
       }
     },
+    onSpace: (index) => {
+      const item = filteredHistory[index]
+      if (item) {
+        setExpandedItemId((current) => (current === item.id ? null : item.id))
+      }
+    },
     onEscape: () => {
       void hideOverlay()
     },
@@ -71,6 +78,7 @@ function App() {
 
   useEffect(() => {
     setSelectedIndex(0)
+    setExpandedItemId(null)
   }, [normalizedQuery, setSelectedIndex])
 
   useEffect(() => {
@@ -118,7 +126,9 @@ function App() {
         items={filteredHistory}
         query={normalizedQuery}
         selectedIndex={selectedIndex}
+        expandedItemId={expandedItemId}
         onHover={setSelectedIndex}
+        onToggleExpand={(id) => setExpandedItemId((current) => (current === id ? null : id))}
         onSelect={(id) => void handleSelect(id)}
         onDelete={(id) => void handleDelete(id)}
         onTogglePin={(id) => void handlePin(id)}
