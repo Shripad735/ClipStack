@@ -119,6 +119,77 @@ mark {
   font-size: 0.76rem;
 }
 
+.pill-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.type-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.type-icon svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.pill-copy-hint {
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  margin-left: 2px;
+  padding-left: 6px;
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.pill-favicon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px;
+}
+
+.pill-favicon img {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.type-url {
+  color: #9bd6ff;
+  border-color: rgba(155, 214, 255, 0.35);
+  background: rgba(155, 214, 255, 0.12);
+}
+
+.type-code {
+  color: #f0cc7d;
+  border-color: rgba(240, 204, 125, 0.35);
+  background: rgba(240, 204, 125, 0.12);
+}
+
+.type-email {
+  color: #8de5ce;
+  border-color: rgba(141, 229, 206, 0.35);
+  background: rgba(141, 229, 206, 0.12);
+}
+
+.type-path {
+  color: #d2b2ff;
+  border-color: rgba(210, 178, 255, 0.35);
+  background: rgba(210, 178, 255, 0.12);
+}
+
+.type-text {
+  color: var(--text-soft);
+}
+
 .pill-pinned {
   color: var(--accent);
   border-color: rgba(123, 216, 143, 0.26);
