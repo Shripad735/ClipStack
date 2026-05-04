@@ -1,4 +1,5 @@
-import { useDeferredValue, useEffect, useEffectEvent, useRef, useState } from 'react'
+import Fuse from 'fuse.js'
+import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { HistoryList } from './components/HistoryList'
 import { OverlayShell } from './components/OverlayShell'
 import { SearchInput } from './components/SearchInput'
@@ -28,9 +29,29 @@ function App() {
 
   const deferredQuery = useDeferredValue(query)
   const normalizedQuery = deferredQuery.trim().toLowerCase()
-  const filteredHistory = normalizedQuery
-    ? history.filter((item) => item.content.toLowerCase().includes(normalizedQuery))
-    : history
+  const fuse = useMemo(
+    () =>
+      new Fuse(history, {
+        includeScore: true,
+        threshold: 0.38,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+        keys: [{ name: 'content', weight: 1 }],
+      }),
+    [history],
+  )
+  const filteredHistory = useMemo(() => {
+    if (!normalizedQuery) {
+      return history
+    }
+
+    const exactMatches = history.filter((item) => item.content.toLowerCase().includes(normalizedQuery))
+    if (exactMatches.length > 0) {
+      return exactMatches
+    }
+
+    return fuse.search(normalizedQuery).map((match) => match.item)
+  }, [fuse, history, normalizedQuery])
 
   const handleSelect = useEffectEvent(async (id: number) => {
     await copyItem(id)
