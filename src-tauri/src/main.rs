@@ -49,7 +49,8 @@ fn main() {
             fs::create_dir_all(&app_dir).map_err(|error| error.to_string())?;
 
             let db_path = app_dir.join("clipstack.db");
-            let mut storage = Storage::open(&db_path)?;
+            let media_dir = app_dir.join("images");
+            let mut storage = Storage::open(&db_path, &media_dir)?;
             let settings = storage.load_settings()?;
             cleanup::prune(&mut storage, &settings)?;
             sync_launch_on_login(app.handle(), &settings)?;

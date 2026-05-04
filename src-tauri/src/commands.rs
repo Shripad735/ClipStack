@@ -1,10 +1,10 @@
-use std::sync::atomic::Ordering;
+use std::borrow::Cow;
 use std::fs;
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
-use arboard::Clipboard;
+use arboard::{Clipboard, ImageData};
 use tauri::{AppHandle, Emitter, State};
 #[cfg(windows)]
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
@@ -13,7 +13,7 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 
 use crate::cleanup;
 use crate::settings::{sync_launch_on_login, AppSettings};
-use crate::storage::ClipboardEntry;
+use crate::storage::{ClipboardEntry, ClipboardEntryKind};
 use crate::{window, AppState};
 
 pub const HISTORY_CHANGED_EVENT: &str = "history-changed";
@@ -37,20 +37,40 @@ pub fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
 
 #[tauri::command]
 pub fn copy_item(app: AppHandle, state: State<'_, AppState>, id: i64) -> Result<(), String> {
-    let (content, settings) = {
+    let (entry, settings) = {
         let mut storage = state.storage.lock().map_err(|error| error.to_string())?;
-        let content = storage
-            .get_entry_content(id)?
+        let entry = storage
+            .get_entry(id)?
             .ok_or_else(|| "clipboard item not found".to_string())?;
         storage.touch_last_copied(id)?;
         let settings = storage.load_settings()?;
-        (content, settings)
+        (entry, settings)
     };
 
     let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
-    clipboard
-        .set_text(content)
-        .map_err(|error| error.to_string())?;
+    match entry.kind {
+        ClipboardEntryKind::Text => {
+            clipboard
+                .set_text(entry.content)
+                .map_err(|error| error.to_string())?;
+        }
+        ClipboardEntryKind::Image => {
+            let image_path = entry
+                .image_path
+                .ok_or_else(|| "image file missing for clipboard item".to_string())?;
+            let image_bytes = fs::read(&image_path).map_err(|error| error.to_string())?;
+            let decoded = image::load_from_memory(&image_bytes).map_err(|error| error.to_string())?;
+            let rgba = decoded.to_rgba8();
+            let (width, height) = rgba.dimensions();
+            clipboard
+                .set_image(ImageData {
+                    width: width as usize,
+                    height: height as usize,
+                    bytes: Cow::Owned(rgba.into_raw()),
+                })
+                .map_err(|error| error.to_string())?;
+        }
+    }
 
     if settings.hide_after_copy || settings.paste_on_select {
         window::hide_overlay(&app)?;
@@ -109,7 +129,7 @@ pub fn update_settings(
 
     state
         .capture_enabled
-        .store(next_settings.capture_enabled, Ordering::Relaxed);
+        .store(next_settings.capture_enabled, std::sync::atomic::Ordering::Relaxed);
     sync_launch_on_login(&app, &next_settings)?;
 
     app.emit(SETTINGS_CHANGED_EVENT, true)
@@ -149,9 +169,8 @@ pub fn export_history(
         _ => return Err("unsupported export format".to_string()),
     };
 
-    let target_dir = dirs::document_dir().unwrap_or_else(|| {
-        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
-    });
+    let target_dir = dirs::document_dir()
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let output_path = target_dir.join(format!("clipstack-history-{timestamp}.{extension}"));
     fs::write(&output_path, content).map_err(|error| error.to_string())?;
     Ok(output_path.to_string_lossy().to_string())
@@ -189,16 +208,38 @@ fn send_ctrl_v() -> Result<(), String> {
 }
 
 fn to_csv(entries: &[ClipboardEntry]) -> String {
-    let mut output = String::from("id,content,created_at,pinned,last_copied_at,copy_count\n");
+    let mut output = String::from(
+        "id,kind,content,image_path,image_width,image_height,created_at,pinned,last_copied_at,copy_count\n",
+    );
     for entry in entries {
-        let escaped = entry.content.replace('"', "\"\"");
+        let escaped_content = entry.content.replace('"', "\"\"");
+        let escaped_image_path = entry
+            .image_path
+            .clone()
+            .unwrap_or_default()
+            .replace('"', "\"\"");
+        let kind = match entry.kind {
+            ClipboardEntryKind::Text => "text",
+            ClipboardEntryKind::Image => "image",
+        };
         let last_copied_at = entry
             .last_copied_at
             .map(|value| value.to_string())
             .unwrap_or_default();
+        let image_width = entry.image_width.map(|value| value.to_string()).unwrap_or_default();
+        let image_height = entry.image_height.map(|value| value.to_string()).unwrap_or_default();
         output.push_str(&format!(
-            "{},\"{}\",{},{},{},{}\n",
-            entry.id, escaped, entry.created_at, entry.pinned, last_copied_at, entry.copy_count
+            "{},\"{}\",\"{}\",\"{}\",{},{},{},{},{},{}\n",
+            entry.id,
+            kind,
+            escaped_content,
+            escaped_image_path,
+            image_width,
+            image_height,
+            entry.created_at,
+            entry.pinned,
+            last_copied_at,
+            entry.copy_count
         ));
     }
     output

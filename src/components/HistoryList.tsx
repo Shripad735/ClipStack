@@ -1,16 +1,130 @@
-import type { ClipboardEntry } from '../lib/tauri'
-import { HistoryRow } from './HistoryRow'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ClipboardEntry } from "../lib/tauri";
+import { HistoryRow } from "./HistoryRow";
 
 type HistoryListProps = {
-  items: ClipboardEntry[]
-  query: string
-  selectedIndex: number
-  expandedItemId: number | null
-  onHover: (index: number) => void
-  onToggleExpand: (id: number) => void
-  onSelect: (id: number) => void
-  onDelete: (id: number) => void
-  onTogglePin: (id: number) => void
+  items: ClipboardEntry[];
+  query: string;
+  selectedIndex: number;
+  expandedItemId: number | null;
+  onHover: (index: number) => void;
+  onToggleExpand: (id: number) => void;
+  onSelect: (id: number) => void;
+  onDelete: (id: number) => void;
+  onTogglePin: (id: number) => void;
+};
+
+type IndexedItem = { item: ClipboardEntry; index: number };
+type FlatRow =
+  | { type: "header"; key: string; title: string }
+  | { type: "item"; key: string; item: ClipboardEntry; index: number };
+
+const GROUP_HEADER_HEIGHT = 30;
+const TEXT_ROW_HEIGHT = 150;
+const TEXT_EXPANDED_ROW_HEIGHT = 250;
+const IMAGE_ROW_HEIGHT = 264;
+const IMAGE_EXPANDED_ROW_HEIGHT = 340;
+const OVERSCAN_ROWS = 5;
+
+function isSameLocalDay(timestamp: number, comparison: Date) {
+  const date = new Date(timestamp);
+  return (
+    date.getFullYear() === comparison.getFullYear() &&
+    date.getMonth() === comparison.getMonth() &&
+    date.getDate() === comparison.getDate()
+  );
+}
+
+function buildRows(items: ClipboardEntry[], query: string): FlatRow[] {
+  const shouldGroup = query.trim().length === 0;
+  if (!shouldGroup) {
+    return items.map((item, index) => ({
+      type: "item",
+      key: `item-${item.id}`,
+      item,
+      index,
+    }));
+  }
+
+  const indexedItems = items.map((item, index) => ({ item, index }));
+  const now = new Date();
+  const pinned = indexedItems.filter(({ item }) => item.pinned);
+  const today = indexedItems.filter(
+    ({ item }) => !item.pinned && isSameLocalDay(item.createdAt, now),
+  );
+  const earlier = indexedItems.filter(
+    ({ item }) => !item.pinned && !isSameLocalDay(item.createdAt, now),
+  );
+
+  const rows: FlatRow[] = [];
+  const pushSection = (title: string, entries: IndexedItem[]) => {
+    if (entries.length === 0) {
+      return;
+    }
+
+    rows.push({ type: "header", key: `header-${title}`, title });
+    rows.push(
+      ...entries.map(({ item, index }) => ({
+        type: "item" as const,
+        key: `item-${item.id}`,
+        item,
+        index,
+      })),
+    );
+  };
+
+  pushSection("Pinned", pinned);
+  pushSection("Today", today);
+  pushSection("Earlier", earlier);
+  return rows;
+}
+
+function getRowHeight(row: FlatRow, expandedItemId: number | null) {
+  if (row.type === "header") {
+    return GROUP_HEADER_HEIGHT;
+  }
+
+  if (row.item.kind === "image") {
+    return expandedItemId === row.item.id
+      ? IMAGE_EXPANDED_ROW_HEIGHT
+      : IMAGE_ROW_HEIGHT;
+  }
+
+  return expandedItemId === row.item.id
+    ? TEXT_EXPANDED_ROW_HEIGHT
+    : TEXT_ROW_HEIGHT;
+}
+
+function findStartIndex(offsets: number[], scrollTop: number) {
+  let low = 0;
+  let high = offsets.length - 1;
+
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (offsets[middle + 1] <= scrollTop) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  return low;
+}
+
+function findEndIndex(offsets: number[], scrollBottom: number) {
+  let low = 0;
+  let high = offsets.length - 1;
+
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (offsets[middle] < scrollBottom) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+
+  return low;
 }
 
 export function HistoryList({
@@ -24,171 +138,150 @@ export function HistoryList({
   onDelete,
   onTogglePin,
 }: HistoryListProps) {
-  const shouldGroup = query.trim().length === 0
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [viewportHeight, setViewportHeight] = useState(320);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const flatRows = useMemo(() => buildRows(items, query), [items, query]);
+  const metrics = useMemo(() => {
+    const heights = flatRows.map((row) => getRowHeight(row, expandedItemId));
+    const offsets = new Array(flatRows.length);
+    let runningTotal = 0;
+    for (let index = 0; index < flatRows.length; index += 1) {
+      offsets[index] = runningTotal;
+      runningTotal += heights[index];
+    }
+
+    return { heights, offsets, totalHeight: runningTotal };
+  }, [expandedItemId, flatRows]);
+
+  useLayoutEffect(() => {
+    const node = containerRef.current;
+    if (!node) {
+      return;
+    }
+
+    const updateHeight = () => {
+      setViewportHeight(node.clientHeight);
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) {
+      return;
+    }
+
+    const selectedRow = flatRows.find(
+      (row) => row.type === "item" && row.index === selectedIndex,
+    );
+    if (!selectedRow || selectedRow.type !== "item") {
+      return;
+    }
+
+    const rowPosition = flatRows.findIndex(
+      (row) => row.key === selectedRow.key,
+    );
+    if (rowPosition < 0) {
+      return;
+    }
+
+    const rowTop = metrics.offsets[rowPosition] ?? 0;
+    const rowBottom = rowTop + (metrics.heights[rowPosition] ?? 0);
+    const viewportTop = node.scrollTop;
+    const viewportBottom = viewportTop + node.clientHeight;
+
+    if (rowTop < viewportTop) {
+      node.scrollTop = rowTop;
+      setScrollTop(rowTop);
+      return;
+    }
+
+    if (rowBottom > viewportBottom) {
+      const nextScrollTop = rowBottom - node.clientHeight;
+      node.scrollTop = nextScrollTop;
+      setScrollTop(nextScrollTop);
+    }
+  }, [flatRows, metrics.heights, metrics.offsets, selectedIndex]);
 
   if (items.length === 0) {
     return (
       <div className="empty-state">
         <p>No clipboard items match yet.</p>
-        <span>Copy text anywhere on Windows and it will appear here.</span>
+        <span>
+          Copy text or images anywhere on Windows and they will appear here.
+        </span>
       </div>
-    )
+    );
   }
+
+  const startIndex = Math.max(
+    0,
+    findStartIndex(metrics.offsets, scrollTop) - OVERSCAN_ROWS,
+  );
+  const endIndex = Math.min(
+    flatRows.length - 1,
+    findEndIndex(metrics.offsets, scrollTop + viewportHeight) + OVERSCAN_ROWS,
+  );
+  const visibleRows = flatRows.slice(startIndex, endIndex + 1);
 
   return (
     <div
+      ref={containerRef}
       className="history-list"
       role="listbox"
-      aria-activedescendant={items[selectedIndex] ? String(items[selectedIndex].id) : undefined}
+      aria-activedescendant={
+        items[selectedIndex] ? String(items[selectedIndex].id) : undefined
+      }
+      onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
-      {shouldGroup ? (
-        <GroupedHistoryRows
-          items={items}
-          query={query}
-          selectedIndex={selectedIndex}
-          expandedItemId={expandedItemId}
-          onHover={onHover}
-          onToggleExpand={onToggleExpand}
-          onSelect={onSelect}
-          onDelete={onDelete}
-          onTogglePin={onTogglePin}
-        />
-      ) : (
-        items.map((item, index) => (
-          <HistoryRow
-            key={item.id}
-            item={item}
-            query={query}
-            isSelected={index === selectedIndex}
-            isExpanded={expandedItemId === item.id}
-            onMouseEnter={() => onHover(index)}
-            onToggleExpand={() => onToggleExpand(item.id)}
-            onSelect={() => onSelect(item.id)}
-            onDelete={() => onDelete(item.id)}
-            onTogglePin={() => onTogglePin(item.id)}
-          />
-        ))
-      )}
+      <div
+        className="history-list-spacer"
+        style={{ height: metrics.totalHeight }}
+      >
+        {visibleRows.map((row, visibleIndex) => {
+          const rowIndex = startIndex + visibleIndex;
+          const top = metrics.offsets[rowIndex] ?? 0;
+          const height = metrics.heights[rowIndex] ?? TEXT_ROW_HEIGHT;
+
+          if (row.type === "header") {
+            return (
+              <div
+                key={row.key}
+                className="history-list-virtual-row history-list-virtual-header"
+                style={{ top, height }}
+              >
+                <h2 className="history-group-title">{row.title}</h2>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={row.key}
+              className="history-list-virtual-row"
+              style={{ top, height }}
+            >
+              <HistoryRow
+                item={row.item}
+                query={query}
+                isSelected={row.index === selectedIndex}
+                isExpanded={expandedItemId === row.item.id}
+                onMouseEnter={() => onHover(row.index)}
+                onToggleExpand={() => onToggleExpand(row.item.id)}
+                onSelect={() => onSelect(row.item.id)}
+                onDelete={() => onDelete(row.item.id)}
+                onTogglePin={() => onTogglePin(row.item.id)}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
-  )
-}
-
-type IndexedItem = { item: ClipboardEntry; index: number }
-
-function isSameLocalDay(timestamp: number, comparison: Date) {
-  const date = new Date(timestamp)
-  return (
-    date.getFullYear() === comparison.getFullYear() &&
-    date.getMonth() === comparison.getMonth() &&
-    date.getDate() === comparison.getDate()
-  )
-}
-
-function GroupedHistoryRows({
-  items,
-  query,
-  selectedIndex,
-  expandedItemId,
-  onHover,
-  onToggleExpand,
-  onSelect,
-  onDelete,
-  onTogglePin,
-}: HistoryListProps) {
-  const indexedItems = items.map((item, index) => ({ item, index }))
-  const now = new Date()
-  const pinned = indexedItems.filter(({ item }) => item.pinned)
-  const today = indexedItems.filter(({ item }) => !item.pinned && isSameLocalDay(item.createdAt, now))
-  const earlier = indexedItems.filter(({ item }) => !item.pinned && !isSameLocalDay(item.createdAt, now))
-
-  return (
-    <>
-      <GroupedSection
-        title="Pinned"
-        entries={pinned}
-        query={query}
-        selectedIndex={selectedIndex}
-        expandedItemId={expandedItemId}
-        onHover={onHover}
-        onToggleExpand={onToggleExpand}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onTogglePin={onTogglePin}
-      />
-      <GroupedSection
-        title="Today"
-        entries={today}
-        query={query}
-        selectedIndex={selectedIndex}
-        expandedItemId={expandedItemId}
-        onHover={onHover}
-        onToggleExpand={onToggleExpand}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onTogglePin={onTogglePin}
-      />
-      <GroupedSection
-        title="Earlier"
-        entries={earlier}
-        query={query}
-        selectedIndex={selectedIndex}
-        expandedItemId={expandedItemId}
-        onHover={onHover}
-        onToggleExpand={onToggleExpand}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onTogglePin={onTogglePin}
-      />
-    </>
-  )
-}
-
-type GroupedSectionProps = {
-  title: string
-  entries: IndexedItem[]
-  query: string
-  selectedIndex: number
-  expandedItemId: number | null
-  onHover: (index: number) => void
-  onToggleExpand: (id: number) => void
-  onSelect: (id: number) => void
-  onDelete: (id: number) => void
-  onTogglePin: (id: number) => void
-}
-
-function GroupedSection({
-  title,
-  entries,
-  query,
-  selectedIndex,
-  expandedItemId,
-  onHover,
-  onToggleExpand,
-  onSelect,
-  onDelete,
-  onTogglePin,
-}: GroupedSectionProps) {
-  if (entries.length === 0) {
-    return null
-  }
-
-  return (
-    <section className="history-group" aria-label={title}>
-      <h2 className="history-group-title">{title}</h2>
-      {entries.map(({ item, index }) => (
-        <HistoryRow
-          key={item.id}
-          item={item}
-          query={query}
-          isSelected={index === selectedIndex}
-          isExpanded={expandedItemId === item.id}
-          onMouseEnter={() => onHover(index)}
-          onToggleExpand={() => onToggleExpand(item.id)}
-          onSelect={() => onSelect(item.id)}
-          onDelete={() => onDelete(item.id)}
-          onTogglePin={() => onTogglePin(item.id)}
-        />
-      ))}
-    </section>
-  )
+  );
 }

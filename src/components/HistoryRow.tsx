@@ -1,18 +1,19 @@
-import type { ClipboardEntry } from '../lib/tauri'
+import type { ClipboardEntry } from "../lib/tauri";
+import { resolveClipboardImageSrc } from "../lib/tauri";
 
 type HistoryRowProps = {
-  item: ClipboardEntry
-  query: string
-  isSelected: boolean
-  isExpanded: boolean
-  onMouseEnter: () => void
-  onToggleExpand: () => void
-  onSelect: () => void
-  onDelete: () => void
-  onTogglePin: () => void
-}
+  item: ClipboardEntry;
+  query: string;
+  isSelected: boolean;
+  isExpanded: boolean;
+  onMouseEnter: () => void;
+  onToggleExpand: () => void;
+  onSelect: () => void;
+  onDelete: () => void;
+  onTogglePin: () => void;
+};
 
-type ContentType = 'url' | 'email' | 'filepath' | 'code' | 'text'
+type ContentType = "url" | "email" | "filepath" | "code" | "image" | "text";
 
 function LinkIcon() {
   return (
@@ -20,7 +21,7 @@ function LinkIcon() {
       <path d="M10.6 13.4a1 1 0 0 1 0-1.4l3.4-3.4a3 3 0 0 1 4.2 4.2l-2.5 2.5a3 3 0 0 1-4.2 0 1 1 0 1 1 1.4-1.4 1 1 0 0 0 1.4 0l2.5-2.5a1 1 0 1 0-1.4-1.4L12 13.4a1 1 0 0 1-1.4 0Z" />
       <path d="M13.4 10.6a1 1 0 0 1 0 1.4L10 15.4a3 3 0 0 1-4.2-4.2l2.5-2.5a3 3 0 0 1 4.2 0 1 1 0 1 1-1.4 1.4 1 1 0 0 0-1.4 0l-2.5 2.5a1 1 0 1 0 1.4 1.4l3.4-3.4a1 1 0 0 1 1.4 0Z" />
     </svg>
-  )
+  );
 }
 
 function CodeIcon() {
@@ -29,7 +30,7 @@ function CodeIcon() {
       <path d="M8.7 7.3a1 1 0 0 1 0 1.4L5.4 12l3.3 3.3a1 1 0 1 1-1.4 1.4l-4-4a1 1 0 0 1 0-1.4l4-4a1 1 0 0 1 1.4 0Z" />
       <path d="M15.3 7.3a1 1 0 0 1 1.4 0l4 4a1 1 0 0 1 0 1.4l-4 4a1 1 0 1 1-1.4-1.4l3.3-3.3-3.3-3.3a1 1 0 0 1 0-1.4Z" />
     </svg>
-  )
+  );
 }
 
 function MailIcon() {
@@ -37,7 +38,7 @@ function MailIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H4Zm16 2v.2l-8 5.3-8-5.3V8h16Zm-16 8v-5.4l7.4 4.9a1 1 0 0 0 1.2 0l7.4-4.9V16H4Z" />
     </svg>
-  )
+  );
 }
 
 function FolderIcon() {
@@ -45,7 +46,7 @@ function FolderIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 6a2 2 0 0 1 2-2h4.6a2 2 0 0 1 1.6.8l1 1.2H19a2 2 0 0 1 2 2v1H3V6Zm18 5H3v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7Z" />
     </svg>
-  )
+  );
 }
 
 function TextIcon() {
@@ -53,143 +54,204 @@ function TextIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 6a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm0 6a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm1 5a1 1 0 1 0 0 2h9a1 1 0 1 0 0-2H5Z" />
     </svg>
-  )
+  );
 }
 
-function detectType(content: string): ContentType {
-  const trimmed = content.trim()
+function ImageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 4a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H5Zm0 2h14a1 1 0 0 1 1 1v6.2l-3.2-3.2a1 1 0 0 0-1.4 0L9 16.2l-1.8-1.8a1 1 0 0 0-1.4 0L4 16.2V7a1 1 0 0 1 1-1Zm-1 11.4 2.5-2.5 1.8 1.8a1 1 0 0 0 1.4 0l6.4-6.4 3.9 3.9V17a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-.6ZM8 8.5A1.5 1.5 0 1 0 8 11.5 1.5 1.5 0 0 0 8 8.5Z" />
+    </svg>
+  );
+}
+
+function detectType(item: ClipboardEntry): ContentType {
+  if (item.kind === "image") {
+    return "image";
+  }
+
+  const trimmed = item.content.trim();
   if (!trimmed) {
-    return 'text'
+    return "text";
   }
 
   if (/^https?:\/\/[^\s]+$/i.test(trimmed)) {
-    return 'url'
+    return "url";
   }
 
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-    return 'email'
+    return "email";
   }
 
-  if (/^[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\?)+$/.test(trimmed) || /^\/(?:[^/\0]+\/?)+$/.test(trimmed)) {
-    return 'filepath'
+  if (
+    /^[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\?)+$/.test(trimmed) ||
+    /^\/(?:[^/\0]+\/?)+$/.test(trimmed)
+  ) {
+    return "filepath";
   }
 
   const codeSignals = [
     /```/,
     /\b(function|const|let|class|import|export|SELECT|INSERT|UPDATE|DELETE|CREATE)\b/,
     /[{}()[\];<>]/,
-  ]
-  const hasCodeSignal = codeSignals.some((pattern) => pattern.test(content))
-  if ((content.includes('\n') && hasCodeSignal) || (hasCodeSignal && content.length > 40)) {
-    return 'code'
+  ];
+  const hasCodeSignal = codeSignals.some((pattern) =>
+    pattern.test(item.content),
+  );
+  if (
+    (item.content.includes("\n") && hasCodeSignal) ||
+    (hasCodeSignal && item.content.length > 40)
+  ) {
+    return "code";
   }
 
-  return 'text'
+  return "text";
 }
 
 function getUrlHost(content: string) {
   try {
-    return new URL(content.trim()).hostname
+    return new URL(content.trim()).hostname;
   } catch {
-    return ''
+    return "";
   }
 }
 
-function contentTypeMeta(content: string) {
-  const type = detectType(content)
-  if (type === 'url') {
-    const host = getUrlHost(content)
+function contentTypeMeta(item: ClipboardEntry) {
+  const type = detectType(item);
+  if (type === "image") {
     return {
       type,
-      label: 'URL',
-      icon: <LinkIcon />,
-      accentClass: 'type-url',
-      faviconUrl: host ? `https://www.google.com/s2/favicons?sz=64&domain=${host}` : null,
-      faviconAlt: host || 'website icon',
-    }
-  }
-  if (type === 'code') {
-    return { type, label: 'Code', icon: <CodeIcon />, accentClass: 'type-code', faviconUrl: null, faviconAlt: '' }
-  }
-  if (type === 'email') {
-    return { type, label: 'Email', icon: <MailIcon />, accentClass: 'type-email', faviconUrl: null, faviconAlt: '' }
-  }
-  if (type === 'filepath') {
-    return {
-      type,
-      label: 'Path',
-      icon: <FolderIcon />,
-      accentClass: 'type-path',
+      label: "Image",
+      icon: <ImageIcon />,
+      accentClass: "type-image",
       faviconUrl: null,
-      faviconAlt: '',
-    }
+      faviconAlt: "",
+    };
+  }
+  if (type === "url") {
+    const host = getUrlHost(item.content);
+    return {
+      type,
+      label: "URL",
+      icon: <LinkIcon />,
+      accentClass: "type-url",
+      faviconUrl: host
+        ? `https://www.google.com/s2/favicons?sz=64&domain=${host}`
+        : null,
+      faviconAlt: host || "website icon",
+    };
+  }
+  if (type === "code") {
+    return {
+      type,
+      label: "Code",
+      icon: <CodeIcon />,
+      accentClass: "type-code",
+      faviconUrl: null,
+      faviconAlt: "",
+    };
+  }
+  if (type === "email") {
+    return {
+      type,
+      label: "Email",
+      icon: <MailIcon />,
+      accentClass: "type-email",
+      faviconUrl: null,
+      faviconAlt: "",
+    };
+  }
+  if (type === "filepath") {
+    return {
+      type,
+      label: "Path",
+      icon: <FolderIcon />,
+      accentClass: "type-path",
+      faviconUrl: null,
+      faviconAlt: "",
+    };
   }
 
-  return { type, label: 'Text', icon: <TextIcon />, accentClass: 'type-text', faviconUrl: null, faviconAlt: '' }
+  return {
+    type,
+    label: "Text",
+    icon: <TextIcon />,
+    accentClass: "type-text",
+    faviconUrl: null,
+    faviconAlt: "",
+  };
 }
 
 function formatCharacterCount(length: number) {
   if (length >= 1_000_000) {
-    return `${(length / 1_000_000).toFixed(1)}m chars`
+    return `${(length / 1_000_000).toFixed(1)}m chars`;
   }
   if (length >= 1_000) {
-    return `${(length / 1_000).toFixed(1)}k chars`
+    return `${(length / 1_000).toFixed(1)}k chars`;
   }
-  return `${length} chars`
+  return `${length} chars`;
 }
 
 function highlightContent(content: string, query: string) {
   if (!query) {
-    return content
+    return content;
   }
 
-  const lowerContent = content.toLowerCase()
-  const startIndex = lowerContent.indexOf(query)
+  const lowerContent = content.toLowerCase();
+  const startIndex = lowerContent.indexOf(query);
   if (startIndex === -1) {
-    return content
+    return content;
   }
 
-  const endIndex = startIndex + query.length
+  const endIndex = startIndex + query.length;
   return (
     <>
       {content.slice(0, startIndex)}
       <mark>{content.slice(startIndex, endIndex)}</mark>
       {content.slice(endIndex)}
     </>
-  )
+  );
 }
 
 function formatAbsoluteTimestamp(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(timestamp))
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
 }
 
 function formatRelativeAge(timestamp: number) {
-  const now = Date.now()
-  const diffMs = Math.max(0, now - timestamp)
-  const minute = 60_000
-  const hour = 60 * minute
-  const day = 24 * hour
+  const now = Date.now();
+  const diffMs = Math.max(0, now - timestamp);
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
 
   if (diffMs < minute) {
-    return 'just now'
+    return "just now";
   }
   if (diffMs < hour) {
-    const minutes = Math.floor(diffMs / minute)
-    return `${minutes} min ago`
+    const minutes = Math.floor(diffMs / minute);
+    return `${minutes} min ago`;
   }
   if (diffMs < day) {
-    const hours = Math.floor(diffMs / hour)
-    return `${hours} hr ago`
+    const hours = Math.floor(diffMs / hour);
+    return `${hours} hr ago`;
   }
   if (diffMs < 2 * day) {
-    return `Yesterday, ${new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(timestamp))}`
+    return `Yesterday, ${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(timestamp))}`;
   }
-  return formatAbsoluteTimestamp(timestamp)
+  return formatAbsoluteTimestamp(timestamp);
+}
+
+function formatImageDimensions(item: ClipboardEntry) {
+  if (!item.imageWidth || !item.imageHeight) {
+    return null;
+  }
+
+  return `${item.imageWidth}×${item.imageHeight}`;
 }
 
 export function HistoryRow({
@@ -203,11 +265,17 @@ export function HistoryRow({
   onDelete,
   onTogglePin,
 }: HistoryRowProps) {
-  const meta = contentTypeMeta(item.content)
-  const createdLabel = formatRelativeAge(item.createdAt)
-  const lastUsedLabel = item.lastCopiedAt ? `last used ${formatRelativeAge(item.lastCopiedAt)}` : null
-  const isLongContent = item.content.length > 180
-  const rowClassName = `history-row${isSelected ? ' history-row-selected' : ''}${isExpanded ? ' history-row-expanded' : ''}`
+  const meta = contentTypeMeta(item);
+  const createdLabel = formatRelativeAge(item.createdAt);
+  const lastUsedLabel = item.lastCopiedAt
+    ? `last used ${formatRelativeAge(item.lastCopiedAt)}`
+    : null;
+  const isLongContent = item.kind === "image" || item.content.length > 180;
+  const rowClassName = `history-row${isSelected ? " history-row-selected" : ""}${isExpanded ? " history-row-expanded" : ""}`;
+  const imageSrc = item.imagePath
+    ? resolveClipboardImageSrc(item.imagePath)
+    : null;
+  const imageDimensions = formatImageDimensions(item);
 
   return (
     <article
@@ -221,7 +289,9 @@ export function HistoryRow({
           <span className={`pill pill-type ${meta.accentClass}`}>
             <span className="type-icon">{meta.icon}</span>
             {meta.label}
-            {meta.type === 'code' ? <span className="pill-copy-hint">copy-ready</span> : null}
+            {meta.type === "code" ? (
+              <span className="pill-copy-hint">copy-ready</span>
+            ) : null}
           </span>
           {meta.faviconUrl ? (
             <span className="pill pill-favicon" title={meta.faviconAlt}>
@@ -229,48 +299,73 @@ export function HistoryRow({
               {meta.faviconAlt}
             </span>
           ) : null}
+          {imageDimensions ? (
+            <span className="pill pill-muted">{imageDimensions}</span>
+          ) : null}
           <span className="pill">{createdLabel}</span>
-          {lastUsedLabel ? <span className="pill pill-muted">{lastUsedLabel}</span> : null}
-          {item.copyCount > 1 ? <span className="pill pill-copy-count">copied {item.copyCount}x</span> : null}
-          {item.pinned ? <span className="pill pill-pinned">Pinned</span> : null}
+          {lastUsedLabel ? (
+            <span className="pill pill-muted">{lastUsedLabel}</span>
+          ) : null}
+          {item.copyCount > 1 ? (
+            <span className="pill pill-copy-count">
+              copied {item.copyCount}x
+            </span>
+          ) : null}
+          {item.pinned ? (
+            <span className="pill pill-pinned">Pinned</span>
+          ) : null}
           {isLongContent ? (
             <button
               type="button"
               className="pill pill-char-count"
               title="Toggle full preview"
               onClick={(event) => {
-                event.stopPropagation()
-                onToggleExpand()
+                event.stopPropagation();
+                onToggleExpand();
               }}
             >
-              {formatCharacterCount(item.content.length)}
+              {item.kind === "image"
+                ? "Preview"
+                : formatCharacterCount(item.content.length)}
             </button>
           ) : null}
         </div>
-        <p className="history-content">{highlightContent(item.content, query)}</p>
+        {item.kind === "image" && imageSrc ? (
+          <div className="history-image-preview-shell">
+            <img
+              className="history-image-preview"
+              src={imageSrc}
+              alt={item.content || "Clipboard image preview"}
+              loading="lazy"
+            />
+          </div>
+        ) : null}
+        <p className="history-content">
+          {highlightContent(item.content, query)}
+        </p>
       </div>
       <div className="history-row-actions">
         <button
           type="button"
           className="icon-button"
           onClick={(event) => {
-            event.stopPropagation()
-            onTogglePin()
+            event.stopPropagation();
+            onTogglePin();
           }}
         >
-          {item.pinned ? 'Unpin' : 'Pin'}
+          {item.pinned ? "Unpin" : "Pin"}
         </button>
         <button
           type="button"
           className="icon-button icon-button-danger"
           onClick={(event) => {
-            event.stopPropagation()
-            onDelete()
+            event.stopPropagation();
+            onDelete();
           }}
         >
           Delete
         </button>
       </div>
     </article>
-  )
+  );
 }

@@ -363,10 +363,13 @@ name = "clipstack"
 version = "0.1.0"
 dependencies = [
  "arboard",
+ "base64 0.22.1",
  "dirs 6.0.0",
+ "image",
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",
