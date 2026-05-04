@@ -4,6 +4,7 @@ export type ClipboardEntry = {
   createdAt: number
   pinned: boolean
   lastCopiedAt: number | null
+  copyCount: number
 }
 
 export type AppSettings = {
@@ -33,6 +34,7 @@ const previewHistory: ClipboardEntry[] = [
     createdAt: Date.now() - 5 * 60_000,
     pinned: true,
     lastCopiedAt: null,
+    copyCount: 1,
   },
   {
     id: 2,
@@ -40,6 +42,7 @@ const previewHistory: ClipboardEntry[] = [
     createdAt: Date.now() - 16 * 60_000,
     pinned: false,
     lastCopiedAt: null,
+    copyCount: 1,
   },
   {
     id: 3,
@@ -47,6 +50,7 @@ const previewHistory: ClipboardEntry[] = [
     createdAt: Date.now() - 38 * 60_000,
     pinned: false,
     lastCopiedAt: null,
+    copyCount: 1,
   },
 ]
 

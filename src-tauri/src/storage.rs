@@ -13,6 +13,7 @@ pub struct ClipboardEntry {
     pub created_at: i64,
     pub pinned: bool,
     pub last_copied_at: Option<i64>,
+    pub copy_count: i64,
 }
 
 pub struct Storage {
@@ -38,7 +39,8 @@ impl Storage {
                     content TEXT NOT NULL,
                     created_at INTEGER NOT NULL,
                     pinned INTEGER NOT NULL DEFAULT 0,
-                    last_copied_at INTEGER
+                    last_copied_at INTEGER,
+                    copy_count INTEGER NOT NULL DEFAULT 1
                 );
                 CREATE TABLE IF NOT EXISTS settings (
                     key TEXT PRIMARY KEY,
@@ -52,6 +54,7 @@ impl Storage {
             )
             .map_err(|error| error.to_string())?;
 
+        ensure_copy_count_column(&self.connection)?;
         let defaults = AppSettings::default();
         self.save_settings(&defaults)?;
         Ok(())
@@ -159,24 +162,51 @@ impl Storage {
             return Ok(None);
         }
 
-        let latest_content: Option<String> = self
+        let existing_id: Option<i64> = self
             .connection
             .query_row(
-                "SELECT content FROM clipboard_entries ORDER BY created_at DESC LIMIT 1",
-                [],
+                "SELECT id
+                 FROM clipboard_entries
+                 WHERE content = ?1
+                 ORDER BY created_at DESC
+                 LIMIT 1",
+                [trimmed],
                 |row| row.get(0),
             )
             .optional()
             .map_err(|error| error.to_string())?;
 
-        if latest_content.as_deref() == Some(trimmed) {
-            return Ok(None);
+        let timestamp = current_timestamp_ms();
+        if let Some(id) = existing_id {
+            self.connection
+                .execute(
+                    "UPDATE clipboard_entries
+                     SET created_at = ?1,
+                         last_copied_at = ?1,
+                         copy_count = COALESCE(copy_count, 1) + 1
+                     WHERE id = ?2",
+                    params![timestamp, id],
+                )
+                .map_err(|error| error.to_string())?;
+
+            let updated = self
+                .connection
+                .query_row(
+                    "SELECT id, content, created_at, pinned, last_copied_at, copy_count
+                     FROM clipboard_entries
+                     WHERE id = ?1",
+                    [id],
+                    map_entry,
+                )
+                .map_err(|error| error.to_string())?;
+            return Ok(Some(updated));
         }
 
-        let created_at = current_timestamp_ms();
+        let created_at = timestamp;
         self.connection
             .execute(
-                "INSERT INTO clipboard_entries(content, created_at, pinned) VALUES(?1, ?2, 0)",
+                "INSERT INTO clipboard_entries(content, created_at, pinned, copy_count)
+                 VALUES(?1, ?2, 0, 1)",
                 params![trimmed, created_at],
             )
             .map_err(|error| error.to_string())?;
@@ -187,6 +217,7 @@ impl Storage {
             created_at,
             pinned: false,
             last_copied_at: None,
+            copy_count: 1,
         }))
     }
 
@@ -201,8 +232,14 @@ impl Storage {
         let mut statement = if trimmed_query.is_empty() {
             self.connection
                 .prepare(
-                    "SELECT id, content, created_at, pinned, last_copied_at
+                    "SELECT MIN(id) AS id,
+                            content,
+                            MAX(created_at) AS created_at,
+                            MAX(pinned) AS pinned,
+                            MAX(last_copied_at) AS last_copied_at,
+                            SUM(COALESCE(copy_count, 1)) AS copy_count
                      FROM clipboard_entries
+                     GROUP BY content
                      ORDER BY pinned DESC, created_at DESC
                      LIMIT ?1",
                 )
@@ -210,9 +247,15 @@ impl Storage {
         } else {
             self.connection
                 .prepare(
-                    "SELECT id, content, created_at, pinned, last_copied_at
+                    "SELECT MIN(id) AS id,
+                            content,
+                            MAX(created_at) AS created_at,
+                            MAX(pinned) AS pinned,
+                            MAX(last_copied_at) AS last_copied_at,
+                            SUM(COALESCE(copy_count, 1)) AS copy_count
                      FROM clipboard_entries
                      WHERE content LIKE ?1 COLLATE NOCASE
+                     GROUP BY content
                      ORDER BY pinned DESC, created_at DESC
                      LIMIT ?2",
                 )
@@ -248,7 +291,9 @@ impl Storage {
     pub fn touch_last_copied(&mut self, id: i64) -> Result<(), String> {
         self.connection
             .execute(
-                "UPDATE clipboard_entries SET last_copied_at = ?1 WHERE id = ?2",
+                "UPDATE clipboard_entries
+                 SET last_copied_at = ?1
+                 WHERE content = (SELECT content FROM clipboard_entries WHERE id = ?2 LIMIT 1)",
                 params![current_timestamp_ms(), id],
             )
             .map_err(|error| error.to_string())?;
@@ -260,7 +305,7 @@ impl Storage {
             .execute(
                 "UPDATE clipboard_entries
                  SET pinned = CASE pinned WHEN 1 THEN 0 ELSE 1 END
-                 WHERE id = ?1",
+                 WHERE content = (SELECT content FROM clipboard_entries WHERE id = ?1 LIMIT 1)",
                 [id],
             )
             .map_err(|error| error.to_string())?;
@@ -269,7 +314,11 @@ impl Storage {
 
     pub fn delete_entry(&mut self, id: i64) -> Result<(), String> {
         self.connection
-            .execute("DELETE FROM clipboard_entries WHERE id = ?1", [id])
+            .execute(
+                "DELETE FROM clipboard_entries
+                 WHERE content = (SELECT content FROM clipboard_entries WHERE id = ?1 LIMIT 1)",
+                [id],
+            )
             .map_err(|error| error.to_string())?;
         Ok(())
     }
@@ -361,6 +410,7 @@ fn map_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<ClipboardEntry> {
         created_at: row.get(2)?,
         pinned: row.get::<_, i64>(3)? == 1,
         last_copied_at: row.get(4)?,
+        copy_count: row.get(5)?,
     })
 }
 
@@ -370,6 +420,38 @@ fn bool_to_string(value: bool) -> String {
     } else {
         "false".to_string()
     }
+}
+
+fn ensure_copy_count_column(connection: &Connection) -> Result<(), String> {
+    if has_column(connection, "clipboard_entries", "copy_count")? {
+        return Ok(());
+    }
+
+    connection
+        .execute(
+            "ALTER TABLE clipboard_entries
+             ADD COLUMN copy_count INTEGER NOT NULL DEFAULT 1",
+            [],
+        )
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+fn has_column(connection: &Connection, table_name: &str, column_name: &str) -> Result<bool, String> {
+    let query = format!("PRAGMA table_info({table_name})");
+    let mut statement = connection
+        .prepare(&query)
+        .map_err(|error| error.to_string())?;
+    let mut rows = statement.query([]).map_err(|error| error.to_string())?;
+
+    while let Some(row) = rows.next().map_err(|error| error.to_string())? {
+        let existing_name: String = row.get(1).map_err(|error| error.to_string())?;
+        if existing_name == column_name {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
 }
 
 #[cfg(test)]

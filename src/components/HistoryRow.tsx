@@ -231,6 +231,7 @@ export function HistoryRow({
           ) : null}
           <span className="pill">{createdLabel}</span>
           {lastUsedLabel ? <span className="pill pill-muted">{lastUsedLabel}</span> : null}
+          {item.copyCount > 1 ? <span className="pill pill-copy-count">copied {item.copyCount}x</span> : null}
           {item.pinned ? <span className="pill pill-pinned">Pinned</span> : null}
           {isLongContent ? (
             <button

@@ -200,6 +200,12 @@ mark {
   color: var(--text-dim);
 }
 
+.pill-copy-count {
+  color: #ffd48c;
+  border-color: rgba(255, 212, 140, 0.35);
+  background: rgba(255, 212, 140, 0.12);
+}
+
 .ghost-button,
 .danger-button,
 .icon-button {
