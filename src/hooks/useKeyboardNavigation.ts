@@ -29,49 +29,77 @@ export function useKeyboardNavigation({
     return Math.max(0, Math.min(index, itemCount - 1))
   }
 
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKey = (
+    key: string,
+    ctrlKey: boolean,
+    metaKey: boolean,
+    preventDefault: () => void,
+  ) => {
     const hasSearchText = searchValue.trim().length > 0
 
-    switch (event.key) {
+    switch (key) {
       case 'ArrowDown':
-        event.preventDefault()
+        preventDefault()
         setSelectedIndex((current) => clampIndex(current + 1))
-        break
+        return
       case 'ArrowUp':
-        event.preventDefault()
+        preventDefault()
         setSelectedIndex((current) => clampIndex(current - 1))
-        break
+        return
       case 'Enter':
-        event.preventDefault()
+        preventDefault()
         onEnter(selectedIndex)
-        break
+        return
       case 'Delete':
         if (!hasSearchText) {
-          event.preventDefault()
+          preventDefault()
           onDelete(selectedIndex)
         }
-        break
+        return
       case 'Escape':
-        event.preventDefault()
+        preventDefault()
         onEscape()
-        break
+        return
       case ' ':
         if (!hasSearchText) {
-          event.preventDefault()
+          preventDefault()
           onSpace(selectedIndex)
         }
-        break
+        return
       default:
-        if (event.key.toLowerCase() === 'p' && (event.ctrlKey || event.metaKey)) {
-          event.preventDefault()
+        if (key.toLowerCase() === 'p' && (ctrlKey || metaKey)) {
+          preventDefault()
           onPin(selectedIndex)
         }
     }
+  }
+
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    handleKey(event.key, event.ctrlKey, event.metaKey, () => event.preventDefault())
+  }
+
+  const onWindowKeyDown = (event: globalThis.KeyboardEvent) => {
+    if (event.defaultPrevented) {
+      return
+    }
+
+    const target = event.target
+    if (target instanceof HTMLElement) {
+      if (target.tagName === 'TEXTAREA') {
+        return
+      }
+      if (target.tagName === 'INPUT' && target.getAttribute('type') !== 'search') {
+        return
+      }
+    }
+
+    handleKey(event.key, event.ctrlKey, event.metaKey, () => event.preventDefault())
   }
 
   return {
     selectedIndex,
     setSelectedIndex,
     onKeyDown,
+    onWindowKeyDown,
   }
 }

@@ -23,6 +23,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null)
+  const [showShortcutHintBar, setShowShortcutHintBar] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const deferredQuery = useDeferredValue(query)
@@ -44,7 +45,7 @@ function App() {
     await togglePin(id)
   })
 
-  const { selectedIndex, setSelectedIndex, onKeyDown } = useKeyboardNavigation({
+  const { selectedIndex, setSelectedIndex, onKeyDown, onWindowKeyDown } = useKeyboardNavigation({
     itemCount: filteredHistory.length,
     searchValue: query,
     onEnter: (index) => {
@@ -80,6 +81,28 @@ function App() {
     setSelectedIndex(0)
     setExpandedItemId(null)
   }, [normalizedQuery, setSelectedIndex])
+
+  useEffect(() => {
+    const hideTimer = window.setTimeout(() => {
+      setShowShortcutHintBar(false)
+    }, 4500)
+    return () => window.clearTimeout(hideTimer)
+  }, [])
+
+  useEffect(() => {
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+        event.preventDefault()
+        setShowShortcutHintBar(true)
+        return
+      }
+
+      onWindowKeyDown(event)
+    }
+
+    window.addEventListener('keydown', handleWindowKeyDown)
+    return () => window.removeEventListener('keydown', handleWindowKeyDown)
+  }, [onWindowKeyDown])
 
   useEffect(() => {
     const focusSearch = () => {
@@ -133,6 +156,9 @@ function App() {
         onDelete={(id) => void handleDelete(id)}
         onTogglePin={(id) => void handlePin(id)}
       />
+      <div className={`shortcut-hint-bar${showShortcutHintBar ? ' shortcut-hint-bar-visible' : ''}`}>
+        Ctrl+P Pin | Del Remove | ↑↓ Navigate | Enter Paste | Space Preview | ? Shortcuts
+      </div>
       {error ? <div className="status-banner status-banner-error">{error}</div> : null}
     </OverlayShell>
   )

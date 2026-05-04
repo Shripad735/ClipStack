@@ -410,6 +410,27 @@ mark {
   color: var(--danger);
 }
 
+.shortcut-hint-bar {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(12, 16, 20, 0.92);
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  letter-spacing: 0.01em;
+  padding: 8px 10px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+  pointer-events: none;
+}
+
+.shortcut-hint-bar-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (max-width: 720px) {
   .overlay-root {
     padding: 0;
