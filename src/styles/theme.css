@@ -1,7 +1,7 @@
 :root {
     color-scheme: dark;
     font-family: "Segoe UI Variable", "Aptos", "Segoe UI", sans-serif;
-    background: rgba(16, 18, 20, 0.92);
+    background: transparent;
     color: #eef4ee;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -28,11 +28,13 @@ html,
 body,
 #root {
     margin: 0;
-    min-height: 100%;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
 }
 
 body {
-    min-height: 100vh;
+    background: transparent;
 }
 
 button,
@@ -50,18 +52,19 @@ mark {
 }
 
 .overlay-root {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
     padding: 8px;
+    background: transparent;
 }
 
 .overlay-card {
     position: relative;
-    width: min(380px, 100%);
-    min-height: 480px;
-    max-height: min(520px, calc(100vh - 16px));
-    border-radius: 16px;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
     border: 1px solid var(--border);
     background: linear-gradient(
         180deg,
@@ -69,11 +72,12 @@ mark {
         rgba(23, 25, 29, 0.98) 100%
     );
     backdrop-filter: blur(22px);
-    box-shadow: var(--shadow);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     padding: 12px 12px 8px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    overflow: hidden;
 }
 
 .overlay-close-button {
@@ -143,9 +147,7 @@ mark {
 }
 
 .header-actions,
-.header-meta,
-.history-row-tags,
-.history-row-actions {
+.header-meta {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
@@ -165,6 +167,7 @@ mark {
     background: rgba(255, 255, 255, 0.03);
     font-size: 0.68rem;
     line-height: 1.2;
+    white-space: nowrap;
 }
 
 .pill-type {
@@ -297,11 +300,10 @@ mark {
 .search-input::placeholder,
 .search-hint {
     color: var(--text-dim);
-}
-
-.search-hint {
     font-size: 0.65rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .history-list {
@@ -364,7 +366,7 @@ mark {
     position: absolute;
     left: 0;
     right: 0;
-    padding-bottom: 4px;
+    padding-bottom: 6px;
 }
 
 .history-list-virtual-header {
@@ -373,30 +375,29 @@ mark {
 }
 
 .history-group-title {
-    margin: 0 2px 4px;
+    margin: 8px 0 4px 0;
     color: var(--text-muted);
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
+    opacity: 0.4;
 }
 
 .history-row {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 8px;
-    border: 1px solid transparent;
-    border-left: 3px solid transparent;
-    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
     padding: 10px 12px;
     background: var(--bg-soft);
     overflow: hidden;
     transition:
         border-color 120ms ease,
         background 120ms ease,
-        box-shadow 120ms ease,
-        transform 120ms ease;
+        box-shadow 120ms ease;
 }
 
 .history-row:hover {
@@ -404,23 +405,21 @@ mark {
 }
 
 .history-row-selected {
-    border-color: transparent;
-    border-left-color: var(--accent);
+    border-color: var(--accent);
     background: rgba(123, 216, 143, 0.08);
-    box-shadow: none;
 }
 
-.history-row-main {
-    min-width: 0;
+.history-row-meta {
     display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 3px;
-    overflow: hidden;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
-.history-row-tags {
-    flex-wrap: nowrap;
+.history-row-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -479,18 +478,24 @@ mark {
 }
 
 .history-row-actions {
+    display: flex;
+    gap: 6px;
     align-items: center;
-    align-self: center;
-    flex-wrap: nowrap;
+    justify-content: flex-end;
+    max-height: 0;
     opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
+    overflow: hidden;
+    transition:
+        max-height 0.15s ease,
+        opacity 0.15s ease,
+        margin-top 0.15s ease;
 }
 
 .history-row:hover .history-row-actions,
 .history-row-selected .history-row-actions {
+    max-height: 36px;
     opacity: 1;
-    pointer-events: auto;
+    margin-top: 4px;
 }
 
 .icon-button {
@@ -772,20 +777,11 @@ mark {
     }
 
     .overlay-card {
-        min-height: 100vh;
         border-radius: 0;
-        width: 100%;
-        max-height: none;
     }
 
-    .overlay-header,
-    .history-row {
+    .overlay-header {
         flex-direction: column;
-    }
-
-    .history-row {
-        height: auto;
-        min-height: calc(100% - 8px);
     }
 
     .search-shell {

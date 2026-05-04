@@ -247,17 +247,18 @@ export function HistoryRow({
       onMouseEnter={onMouseEnter}
       onClick={onSelect}
     >
-      <div className="history-row-main">
-        <div className="history-row-tags">
-          <span className={`pill pill-type ${meta.accentClass}`}>
-            <span className="type-icon">{meta.icon}</span>
-            {meta.label}
-          </span>
-          {imageDimensions ? (
-            <span className="pill pill-muted">{imageDimensions}</span>
-          ) : null}
-          <span className="pill">{createdLabel}</span>
-        </div>
+      <div className="history-row-meta">
+        <span className={`pill pill-type ${meta.accentClass}`}>
+          <span className="type-icon">{meta.icon}</span>
+          {meta.label}
+        </span>
+        {imageDimensions ? (
+          <span className="pill pill-muted">{imageDimensions}</span>
+        ) : null}
+        <span className="pill">{createdLabel}</span>
+      </div>
+
+      <div className="history-row-content-wrapper">
         {item.kind === "image" ? (
           <div className="history-image-preview-shell">
             {imageSrc && !imageFailed ? (
@@ -283,15 +284,15 @@ export function HistoryRow({
               </div>
             )}
           </div>
-        ) : null}
-        {item.kind !== "image" ? (
+        ) : (
           <p
             className={`history-content${meta.type === "url" ? " history-content-url" : ""}`}
           >
             {highlightContent(item.content, query)}
           </p>
-        ) : null}
+        )}
       </div>
+
       <div className="history-row-actions">
         <button
           type="button"

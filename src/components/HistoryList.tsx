@@ -17,9 +17,9 @@ type FlatRow =
   | { type: "header"; key: string; title: string }
   | { type: "item"; key: string; item: ClipboardEntry; index: number };
 
-const GROUP_HEADER_HEIGHT = 18;
-const TEXT_ROW_HEIGHT = 62;
-const IMAGE_ROW_HEIGHT = 148;
+const GROUP_HEADER_HEIGHT = 22;
+const TEXT_ROW_HEIGHT = 76;
+const IMAGE_ROW_HEIGHT = 170;
 const OVERSCAN_ROWS = 5;
 
 function isSameLocalDay(timestamp: number, comparison: Date) {
