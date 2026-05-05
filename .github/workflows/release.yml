@@ -73,7 +73,7 @@ jobs:
           $body += Section "Docs" $docs
           $body += Section "Other" $other
           $body += "### Assets"
-          $body += "- Windows installer: `ClipStack_*_x64-setup.exe`"
+          $body += '- Windows installer: `ClipStack_*_x64-setup.exe`'
 
           $body | Set-Content -Path release-notes.md -Encoding utf8
 
