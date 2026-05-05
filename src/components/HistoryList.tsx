@@ -90,15 +90,15 @@ export function HistoryList({
     const elById = document.getElementById(String(selectedItem.id));
     if (!elById) return;
 
-    const itemTop = elById.offsetTop - container.offsetTop;
-    const itemBottom = itemTop + elById.offsetHeight;
-    const viewTop = container.scrollTop;
-    const viewBottom = viewTop + container.clientHeight;
+    const containerRect = container.getBoundingClientRect();
+    const itemRect = elById.getBoundingClientRect();
 
-    if (itemTop < viewTop) {
-      container.scrollTop = itemTop - 4;
-    } else if (itemBottom > viewBottom) {
-      container.scrollTop = itemBottom - container.clientHeight + 4;
+    if (itemRect.bottom > containerRect.bottom) {
+      // Item is below the visible area — scroll down just enough to show it fully
+      container.scrollTop += itemRect.bottom - containerRect.bottom + 6;
+    } else if (itemRect.top < containerRect.top) {
+      // Item is above the visible area — scroll up just enough to show it fully
+      container.scrollTop -= containerRect.top - itemRect.top + 6;
     }
   }, [selectedIndex, items]);
 
