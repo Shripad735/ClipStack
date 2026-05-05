@@ -419,8 +419,18 @@ mark {
 
 .history-row-meta {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.history-row-meta-pills {
+    display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
 }
 
 .history-row-content-wrapper {
@@ -437,15 +447,17 @@ mark {
     align-items: center;
     justify-content: center;
     width: 100%;
+    height: 108px;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(8, 12, 15, 0.36);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .history-image-preview {
     width: 100%;
-    max-height: 110px;
+    height: 100%;
     object-fit: cover;
     border-radius: 6px;
 }
@@ -488,11 +500,9 @@ mark {
 
 .history-row-actions {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
-    justify-content: flex-end;
-    height: 28px;
-    margin-top: 4px;
+    flex-shrink: 0;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease;
@@ -765,9 +775,14 @@ mark {
 }
 
 .shortcut-hint-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 10;
     border-radius: 12px;
     border: 1px solid var(--border);
-    background: rgba(12, 16, 20, 0.92);
+    background: rgba(12, 16, 20, 0.95);
     color: var(--text-soft);
     font-size: 0.74rem;
     letter-spacing: 0.01em;
@@ -778,11 +793,13 @@ mark {
         opacity 200ms ease,
         transform 200ms ease;
     pointer-events: none;
+    backdrop-filter: blur(8px);
 }
 
 .shortcut-hint-bar-visible {
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
 @media (max-width: 360px) {

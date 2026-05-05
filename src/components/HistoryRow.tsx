@@ -248,14 +248,38 @@ export function HistoryRow({
       onClick={onSelect}
     >
       <div className="history-row-meta">
-        <span className={`pill pill-type ${meta.accentClass}`}>
-          <span className="type-icon">{meta.icon}</span>
-          {meta.label}
-        </span>
-        {imageDimensions ? (
-          <span className="pill pill-muted">{imageDimensions}</span>
-        ) : null}
-        <span className="pill">{createdLabel}</span>
+        <div className="history-row-meta-pills">
+          <span className={`pill pill-type ${meta.accentClass}`}>
+            <span className="type-icon">{meta.icon}</span>
+            {meta.label}
+          </span>
+          {imageDimensions ? (
+            <span className="pill pill-muted">{imageDimensions}</span>
+          ) : null}
+          <span className="pill">{createdLabel}</span>
+        </div>
+        <div className="history-row-actions">
+          <button
+            type="button"
+            className="icon-button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onTogglePin();
+            }}
+          >
+            {item.pinned ? "Unpin" : "Pin"}
+          </button>
+          <button
+            type="button"
+            className="icon-button icon-button-danger"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete();
+            }}
+          >
+            Del
+          </button>
+        </div>
       </div>
 
       <div className="history-row-content-wrapper">
@@ -291,29 +315,6 @@ export function HistoryRow({
             {highlightContent(item.content, query)}
           </p>
         )}
-      </div>
-
-      <div className="history-row-actions">
-        <button
-          type="button"
-          className="icon-button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onTogglePin();
-          }}
-        >
-          {item.pinned ? "Unpin" : "Pin"}
-        </button>
-        <button
-          type="button"
-          className="icon-button icon-button-danger"
-          onClick={(event) => {
-            event.stopPropagation();
-            onDelete();
-          }}
-        >
-          Delete
-        </button>
       </div>
     </article>
   );
