@@ -31,6 +31,8 @@ body,
     padding: 0;
     height: 100%;
     overflow: hidden;
+    border-radius: 12px;
+    background: transparent;
 }
 
 body {
@@ -364,25 +366,8 @@ mark {
     background: rgba(255, 255, 255, 0.3);
 }
 
-.history-list-spacer {
-    position: relative;
-    width: 100%;
-}
-
-.history-list-virtual-row {
-    position: absolute;
-    left: 0;
-    right: 0;
-    width: 100%;
-}
-
-.history-list-virtual-header {
-    display: flex;
-    align-items: flex-end;
-}
-
 .history-group-title {
-    margin: 8px 0 4px 0;
+    margin: 10px 0 4px 2px;
     color: var(--text-muted);
     font-size: 10px;
     font-weight: 700;

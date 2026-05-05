@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { ClipboardEntry } from "../lib/tauri";
 import { HistoryRow } from "./HistoryRow";
 
@@ -16,11 +16,6 @@ type IndexedItem = { item: ClipboardEntry; index: number };
 type FlatRow =
   | { type: "header"; key: string; title: string }
   | { type: "item"; key: string; item: ClipboardEntry; index: number };
-
-const GROUP_HEADER_HEIGHT = 26;
-const TEXT_ROW_HEIGHT = 108;
-const IMAGE_ROW_HEIGHT = 168;
-const OVERSCAN_ROWS = 3;
 
 function isSameLocalDay(timestamp: number, comparison: Date) {
   const date = new Date(timestamp);
@@ -54,10 +49,7 @@ function buildRows(items: ClipboardEntry[], query: string): FlatRow[] {
 
   const rows: FlatRow[] = [];
   const pushSection = (title: string, entries: IndexedItem[]) => {
-    if (entries.length === 0) {
-      return;
-    }
-
+    if (entries.length === 0) return;
     rows.push({ type: "header", key: `header-${title}`, title });
     rows.push(
       ...entries.map(({ item, index }) => ({
@@ -75,46 +67,6 @@ function buildRows(items: ClipboardEntry[], query: string): FlatRow[] {
   return rows;
 }
 
-function getRowHeight(row: FlatRow) {
-  if (row.type === "header") {
-    return GROUP_HEADER_HEIGHT;
-  }
-
-  return row.item.kind === "image" ? IMAGE_ROW_HEIGHT : TEXT_ROW_HEIGHT;
-}
-
-function findStartIndex(offsets: number[], scrollTop: number) {
-  let low = 0;
-  let high = offsets.length - 1;
-
-  while (low < high) {
-    const middle = Math.floor((low + high) / 2);
-    if (offsets[middle + 1] <= scrollTop) {
-      low = middle + 1;
-    } else {
-      high = middle;
-    }
-  }
-
-  return low;
-}
-
-function findEndIndex(offsets: number[], scrollBottom: number) {
-  let low = 0;
-  let high = offsets.length - 1;
-
-  while (low < high) {
-    const middle = Math.ceil((low + high) / 2);
-    if (offsets[middle] < scrollBottom) {
-      low = middle;
-    } else {
-      high = middle - 1;
-    }
-  }
-
-  return low;
-}
-
 export function HistoryList({
   items,
   query,
@@ -125,75 +77,30 @@ export function HistoryList({
   onTogglePin,
 }: HistoryListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewportHeight, setViewportHeight] = useState(320);
-  const [scrollTop, setScrollTop] = useState(0);
-
   const flatRows = useMemo(() => buildRows(items, query), [items, query]);
-  const metrics = useMemo(() => {
-    const heights = flatRows.map((row) => getRowHeight(row));
-    const offsets = new Array(flatRows.length);
-    let runningTotal = 0;
-    for (let index = 0; index < flatRows.length; index += 1) {
-      offsets[index] = runningTotal;
-      runningTotal += heights[index];
-    }
 
-    return { heights, offsets, totalHeight: runningTotal };
-  }, [flatRows]);
-
-  useLayoutEffect(() => {
-    const node = containerRef.current;
-    if (!node) {
-      return;
-    }
-
-    const updateHeight = () => {
-      setViewportHeight(node.clientHeight);
-    };
-
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
+  // Scroll the keyboard-selected row into view without jumping
   useEffect(() => {
-    const node = containerRef.current;
-    if (!node) {
-      return;
-    }
+    const container = containerRef.current;
+    if (!container || items.length === 0) return;
 
-    const selectedRow = flatRows.find(
-      (row) => row.type === "item" && row.index === selectedIndex,
-    );
-    if (!selectedRow || selectedRow.type !== "item") {
-      return;
-    }
+    const selectedItem = items[selectedIndex];
+    if (!selectedItem) return;
 
-    const rowPosition = flatRows.findIndex(
-      (row) => row.key === selectedRow.key,
-    );
-    if (rowPosition < 0) {
-      return;
-    }
+    const elById = document.getElementById(String(selectedItem.id));
+    if (!elById) return;
 
-    const rowTop = metrics.offsets[rowPosition] ?? 0;
-    const rowBottom = rowTop + (metrics.heights[rowPosition] ?? 0);
-    const viewportTop = node.scrollTop;
-    const viewportBottom = viewportTop + node.clientHeight;
+    const itemTop = elById.offsetTop - container.offsetTop;
+    const itemBottom = itemTop + elById.offsetHeight;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
 
-    if (rowTop < viewportTop) {
-      node.scrollTop = rowTop;
-      setScrollTop(rowTop);
-      return;
+    if (itemTop < viewTop) {
+      container.scrollTop = itemTop - 4;
+    } else if (itemBottom > viewBottom) {
+      container.scrollTop = itemBottom - container.clientHeight + 4;
     }
-
-    if (rowBottom > viewportBottom) {
-      const nextScrollTop = rowBottom - node.clientHeight;
-      node.scrollTop = nextScrollTop;
-      setScrollTop(nextScrollTop);
-    }
-  }, [flatRows, metrics.heights, metrics.offsets, selectedIndex]);
+  }, [selectedIndex, items]);
 
   if (items.length === 0) {
     return (
@@ -206,16 +113,6 @@ export function HistoryList({
     );
   }
 
-  const startIndex = Math.max(
-    0,
-    findStartIndex(metrics.offsets, scrollTop) - OVERSCAN_ROWS,
-  );
-  const endIndex = Math.min(
-    flatRows.length - 1,
-    findEndIndex(metrics.offsets, scrollTop + viewportHeight) + OVERSCAN_ROWS,
-  );
-  const visibleRows = flatRows.slice(startIndex, endIndex + 1);
-
   return (
     <div
       ref={containerRef}
@@ -224,48 +121,29 @@ export function HistoryList({
       aria-activedescendant={
         items[selectedIndex] ? String(items[selectedIndex].id) : undefined
       }
-      onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
-      <div
-        className="history-list-spacer"
-        style={{ height: metrics.totalHeight }}
-      >
-        {visibleRows.map((row, visibleIndex) => {
-          const rowIndex = startIndex + visibleIndex;
-          const top = metrics.offsets[rowIndex] ?? 0;
-          const height = metrics.heights[rowIndex] ?? TEXT_ROW_HEIGHT;
-
-          if (row.type === "header") {
-            return (
-              <div
-                key={row.key}
-                className="history-list-virtual-row history-list-virtual-header"
-                style={{ top, height }}
-              >
-                <h2 className="history-group-title">{row.title}</h2>
-              </div>
-            );
-          }
-
+      {flatRows.map((row) => {
+        if (row.type === "header") {
           return (
-            <div
-              key={row.key}
-              className="history-list-virtual-row"
-              style={{ top, height }}
-            >
-              <HistoryRow
-                item={row.item}
-                query={query}
-                isSelected={row.index === selectedIndex}
-                onMouseEnter={() => onHover(row.index)}
-                onSelect={() => onSelect(row.item.id)}
-                onDelete={() => onDelete(row.item.id)}
-                onTogglePin={() => onTogglePin(row.item.id)}
-              />
-            </div>
+            <h2 key={row.key} className="history-group-title">
+              {row.title}
+            </h2>
           );
-        })}
-      </div>
+        }
+
+        return (
+          <HistoryRow
+            key={row.key}
+            item={row.item}
+            query={query}
+            isSelected={row.index === selectedIndex}
+            onMouseEnter={() => onHover(row.index)}
+            onSelect={() => onSelect(row.item.id)}
+            onDelete={() => onDelete(row.item.id)}
+            onTogglePin={() => onTogglePin(row.item.id)}
+          />
+        );
+      })}
     </div>
   );
 }
