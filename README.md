@@ -6,13 +6,14 @@ It gives you searchable clipboard history, pinning, cleanup controls, and quick 
 ## Features
 
 - Global shortcut overlay (`Ctrl` + `Shift` + `V`)
-- Clipboard history capture with local SQLite storage
-- Instant search across copied text
-- Pin / unpin important items
-- Delete entries and clear unpinned history
-- Optional launch on Windows login
-- Optional paste-on-select into the active app
-- Compact, minimal overlay UI for quick use
+- Clipboard history for text and images with local SQLite storage
+- Fuzzy search with grouping (Pinned, Today, Earlier) and duplicate counts
+- Content type chips with inline previews (URLs, email, file paths, code, images)
+- Pin/unpin, delete, clear unpinned, and export history (JSON/CSV)
+- Snippets panel for reusable text
+- Tray controls for show/hide, pause capture, and quit
+- Overlay remembers position and stays always on top
+- Optional launch on Windows login and paste-on-select
 
 ## Tech Stack
 
@@ -71,6 +72,9 @@ Generated installer output (default):
 - `Arrow Up / Arrow Down` - Navigate items
 - `Enter` - Select item (copy/paste behavior follows settings)
 - `Delete` - Delete selected item (when search box is empty)
+- `P` - Pin/unpin selected item
+- `Ctrl + Shift + P` - Alternate pin/unpin shortcut
+- `?` - Toggle shortcut hint bar
 - `Esc` - Close overlay
 
 ## Settings
@@ -84,6 +88,8 @@ Current in-app settings include:
 - Paste selected item into active app
 - Close panel after selecting an item
 - Open panel when app is launched manually
+- Clear unpinned history
+- Export history (JSON/CSV)
 
 ## Privacy
 
@@ -98,6 +104,14 @@ ClipStack is local-first:
 - Better filtering and tags
 - Export/import history
 - Additional customization and shortcuts
+
+## Website
+
+The static project site lives in `docs/` and is deployed to GitHub Pages via `.github/workflows/pages.yml` when changes are pushed to the `docs/` folder.
+
+## Releases
+
+Windows NSIS installers are built by GitHub Actions on `v*` tags. Release notes are generated from git history with sections for features, fixes, and performance updates.
 
 ## License
 

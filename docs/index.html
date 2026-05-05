@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ClipStack — Local-first clipboard manager for Windows</title>
+    <meta
+      name="description"
+      content="ClipStack is a fast, local-first clipboard manager for Windows with fuzzy search, snippets, and smart history management."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink-900: #0f172a;
+        --ink-800: #1f2a44;
+        --ink-700: #2f3b52;
+        --ink-500: #56627a;
+        --ink-300: #8a95ab;
+        --ink-200: #c9d1df;
+        --cloud-100: #f5f6fb;
+        --cloud-200: #ebedf5;
+        --accent-500: #ff6b4a;
+        --accent-300: #ff9b82;
+        --accent-100: #ffe5dd;
+        --glass: rgba(255, 255, 255, 0.75);
+        --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        --radius-lg: 28px;
+        --radius-md: 20px;
+        --radius-sm: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Manrope", system-ui, -apple-system, sans-serif;
+        color: var(--ink-900);
+        background: radial-gradient(circle at top left, #fff4ef 0%, transparent 55%),
+          radial-gradient(circle at 20% 20%, #eef2ff 0%, transparent 50%),
+          linear-gradient(160deg, #fbfcff 0%, #f1f3fa 100%);
+        min-height: 100vh;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .page {
+        display: flex;
+        flex-direction: column;
+        gap: 80px;
+        padding: 40px 6vw 80px;
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .logo-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--accent-500), #ffbb6c);
+        display: grid;
+        place-items: center;
+        color: white;
+        font-weight: 800;
+        box-shadow: 0 12px 24px rgba(255, 107, 74, 0.3);
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 18px;
+        font-weight: 600;
+        color: var(--ink-700);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        align-items: center;
+        gap: 40px;
+      }
+
+      .hero h1 {
+        font-family: "Playfair Display", serif;
+        font-size: clamp(2.4rem, 2.2rem + 2vw, 3.8rem);
+        margin: 0;
+        color: var(--ink-900);
+      }
+
+      .hero p {
+        color: var(--ink-700);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .hero-cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 28px;
+      }
+
+      .button {
+        padding: 12px 22px;
+        border-radius: 999px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, var(--accent-500), #ffb978);
+        color: white;
+        box-shadow: 0 18px 30px rgba(255, 107, 74, 0.3);
+      }
+
+      .button.secondary {
+        background: var(--glass);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        color: var(--ink-800);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      .button:hover {
+        transform: translateY(-2px);
+      }
+
+      .hero-card {
+        padding: 28px;
+        border-radius: var(--radius-lg);
+        background: var(--glass);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .hero-card .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: var(--ink-700);
+        background: rgba(255, 255, 255, 0.75);
+        padding: 8px 14px;
+        border-radius: 999px;
+        width: fit-content;
+      }
+
+      .hero-card .stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .stat {
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .stat span {
+        color: var(--ink-500);
+        font-size: 0.85rem;
+      }
+
+      .stat strong {
+        font-size: 1.2rem;
+      }
+
+      .section-title {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        margin: 0 0 16px;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 24px;
+      }
+
+      .feature-card {
+        padding: 22px;
+        border-radius: var(--radius-md);
+        background: white;
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(15, 23, 42, 0.05);
+      }
+
+      .feature-card h3 {
+        margin: 0 0 10px;
+        font-size: 1.1rem;
+      }
+
+      .feature-card p {
+        margin: 0;
+        color: var(--ink-500);
+        line-height: 1.6;
+      }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 24px;
+      }
+
+      .workflow-card {
+        padding: 22px;
+        border-radius: var(--radius-md);
+        background: linear-gradient(145deg, #fff, #f6f8ff);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+      }
+
+      .workflow-card span {
+        font-size: 0.85rem;
+        color: var(--ink-500);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .workflow-card h4 {
+        margin: 12px 0 8px;
+      }
+
+      .workflow-card p {
+        margin: 0;
+        color: var(--ink-500);
+        line-height: 1.6;
+      }
+
+      .cta-panel {
+        padding: 32px;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(135deg, rgba(255, 107, 74, 0.12), rgba(255, 187, 108, 0.2));
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        border: 1px solid rgba(255, 107, 74, 0.2);
+      }
+
+      footer {
+        padding-top: 32px;
+        border-top: 1px solid rgba(15, 23, 42, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        color: var(--ink-500);
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-weight: 600;
+      }
+
+      @media (max-width: 720px) {
+        .nav {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .hero-card .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @keyframes floatIn {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .reveal {
+        animation: floatIn 0.6s ease both;
+      }
+
+      .delay-1 {
+        animation-delay: 0.1s;
+      }
+
+      .delay-2 {
+        animation-delay: 0.2s;
+      }
+
+      .delay-3 {
+        animation-delay: 0.3s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="reveal">
+        <div class="nav">
+          <div class="logo">
+            <span class="logo-mark">CS</span>
+            ClipStack
+          </div>
+          <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#download">Download</a>
+          </nav>
+        </div>
+        <section class="hero">
+          <div>
+            <p class="badge">Local-first clipboard control</p>
+            <h1>Clipboard memory with a minimalist, lightning-fast overlay.</h1>
+            <p>
+              ClipStack keeps a trusted local history of everything you copy, with fuzzy search, snippets,
+              and quick paste workflows built for Windows power users.
+            </p>
+            <div class="hero-cta">
+              <a class="button primary" href="https://github.com/Shripad735/ClipStack/releases">Get the latest release</a>
+              <a class="button secondary" href="https://github.com/Shripad735/ClipStack">View on GitHub</a>
+            </div>
+          </div>
+          <div class="hero-card">
+            <div class="badge">Built for focus</div>
+            <div class="stats">
+              <div class="stat">
+                <span>Global Shortcut</span>
+                <strong>Ctrl + Shift + V</strong>
+              </div>
+              <div class="stat">
+                <span>Storage</span>
+                <strong>Local SQLite</strong>
+              </div>
+              <div class="stat">
+                <span>Search</span>
+                <strong>Fuzzy + Grouped</strong>
+              </div>
+              <div class="stat">
+                <span>Snippets</span>
+                <strong>Reusable text</strong>
+              </div>
+            </div>
+            <p>
+              Everything stays on-device. Capture text or images, pin important items, and export history in
+              one click.
+            </p>
+          </div>
+        </section>
+      </header>
+
+      <section id="features" class="reveal delay-1">
+        <h2 class="section-title">Designed for lightning recall</h2>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>Smart history</h3>
+            <p>Automatically groups your clips, tracks duplicates, and keeps a tidy timeline.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Preview everything</h3>
+            <p>Inline previews for URLs, code, emails, file paths, and image snippets.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Pin and protect</h3>
+            <p>Pin essential clips, clear unpinned history, and keep sensitive content local.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Snippets vault</h3>
+            <p>Save reusable phrases and templates for fast pastes without the clutter.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Tray control</h3>
+            <p>Pause capture, open the overlay, or quit instantly from the system tray.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Export-ready</h3>
+            <p>Export clipboard history to JSON or CSV when you need a clean archive.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="workflow" class="reveal delay-2">
+        <h2 class="section-title">A smooth daily flow</h2>
+        <div class="workflow">
+          <div class="workflow-card">
+            <span>1</span>
+            <h4>Summon instantly</h4>
+            <p>Hit <strong>Ctrl + Shift + V</strong> to open a compact overlay from anywhere.</p>
+          </div>
+          <div class="workflow-card">
+            <span>2</span>
+            <h4>Find in seconds</h4>
+            <p>Search fuzzy, filter by pinned state, and skim rich previews.</p>
+          </div>
+          <div class="workflow-card">
+            <span>3</span>
+            <h4>Paste with intent</h4>
+            <p>Choose copy or paste-on-select depending on your workflow preferences.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="download" class="reveal delay-3">
+        <div class="cta-panel">
+          <h2 class="section-title">Download ClipStack</h2>
+          <p>
+            Grab the latest Windows installer from GitHub Releases. ClipStack runs locally and keeps your
+            clipboard history private.
+          </p>
+          <div class="hero-cta">
+            <a class="button primary" href="https://github.com/Shripad735/ClipStack/releases">Download for Windows</a>
+            <a class="button secondary" href="https://github.com/Shripad735/ClipStack">Read the docs</a>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="footer-links">
+          <a href="#features">Features</a>
+          <a href="#workflow">Workflow</a>
+          <a href="https://github.com/Shripad735/ClipStack/releases">Releases</a>
+          <a href="https://github.com/Shripad735/ClipStack/issues">Issues</a>
+        </div>
+        <span>ClipStack. Built with Tauri, React, and a local-first mindset.</span>
+      </footer>
+    </div>
+  </body>
+</html>
