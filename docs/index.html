@@ -1,465 +1,1177 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ClipStack — Local-first clipboard manager for Windows</title>
-    <meta
-      name="description"
-      content="ClipStack is a fast, local-first clipboard manager for Windows with fuzzy search, snippets, and smart history management."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        color-scheme: light;
-        --ink-900: #0f172a;
-        --ink-800: #1f2a44;
-        --ink-700: #2f3b52;
-        --ink-500: #56627a;
-        --ink-300: #8a95ab;
-        --ink-200: #c9d1df;
-        --cloud-100: #f5f6fb;
-        --cloud-200: #ebedf5;
-        --accent-500: #ff6b4a;
-        --accent-300: #ff9b82;
-        --accent-100: #ffe5dd;
-        --glass: rgba(255, 255, 255, 0.75);
-        --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-        --radius-lg: 28px;
-        --radius-md: 20px;
-        --radius-sm: 14px;
-      }
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ClipStack — Local-first clipboard manager for Windows</title>
+        <meta
+            name="description"
+            content="ClipStack is a fast, local-first clipboard manager for Windows with fuzzy search, snippets, and smart history management."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            /* ─── tokens ──────────────────────────────────────────────── */
+            :root {
+                --bg: #ffffff;
+                --bg-alt: #f7f7f5;
+                --dark: #0f0f0f;
+                --dark-2: #1a1a1a;
+                --dark-3: #242424;
+                --text: #1a1a1a;
+                --text-2: #555555;
+                --text-3: #888888;
+                --border: #e4e4e4;
+                --border-dk: rgba(255, 255, 255, 0.1);
+                --accent: #e84422; /* single brand accent */
+                --accent-dim: #fde8e3;
+                --mono: "JetBrains Mono", "Fira Code", monospace;
+                --sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+                --r-sm: 8px;
+                --r-md: 12px;
+                --r-lg: 16px;
+            }
 
-      * {
-        box-sizing: border-box;
-      }
+            /* ─── reset ───────────────────────────────────────────────── */
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
 
-      body {
-        margin: 0;
-        font-family: "Manrope", system-ui, -apple-system, sans-serif;
-        color: var(--ink-900);
-        background: radial-gradient(circle at top left, #fff4ef 0%, transparent 55%),
-          radial-gradient(circle at 20% 20%, #eef2ff 0%, transparent 50%),
-          linear-gradient(160deg, #fbfcff 0%, #f1f3fa 100%);
-        min-height: 100vh;
-      }
+            body {
+                font-family: var(--sans);
+                font-size: 16px;
+                line-height: 1.6;
+                color: var(--text);
+                background: var(--bg);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
 
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+            img {
+                display: block;
+                max-width: 100%;
+            }
 
-      .page {
-        display: flex;
-        flex-direction: column;
-        gap: 80px;
-        padding: 40px 6vw 80px;
-      }
+            /* ─── nav ─────────────────────────────────────────────────── */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: rgba(15, 15, 15, 0.92);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border-dk);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 clamp(24px, 6vw, 80px);
+                height: 60px;
+            }
 
-      header {
-        display: flex;
-        flex-direction: column;
-        gap: 32px;
-      }
+            .logo {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                color: #fff;
+                font-weight: 700;
+                font-size: 1rem;
+                letter-spacing: -0.01em;
+            }
 
-      .nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 24px;
-      }
+            .logo-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                background: var(--accent);
+                display: grid;
+                place-items: center;
+                flex-shrink: 0;
+            }
 
-      .logo {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-      }
+            .logo-icon svg {
+                width: 16px;
+                height: 16px;
+                fill: none;
+                stroke: #fff;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
 
-      .logo-mark {
-        width: 42px;
-        height: 42px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, var(--accent-500), #ffbb6c);
-        display: grid;
-        place-items: center;
-        color: white;
-        font-weight: 800;
-        box-shadow: 0 12px 24px rgba(255, 107, 74, 0.3);
-      }
+            .nav-links {
+                display: flex;
+                gap: 28px;
+                list-style: none;
+            }
 
-      .nav-links {
-        display: flex;
-        gap: 18px;
-        font-weight: 600;
-        color: var(--ink-700);
-      }
+            .nav-links a {
+                color: rgba(255, 255, 255, 0.55);
+                font-size: 0.875rem;
+                font-weight: 500;
+                letter-spacing: 0.01em;
+                transition: color 0.15s;
+            }
 
-      .hero {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        align-items: center;
-        gap: 40px;
-      }
+            .nav-links a:hover {
+                color: #fff;
+            }
 
-      .hero h1 {
-        font-family: "Playfair Display", serif;
-        font-size: clamp(2.4rem, 2.2rem + 2vw, 3.8rem);
-        margin: 0;
-        color: var(--ink-900);
-      }
+            .nav-cta {
+                padding: 7px 16px;
+                background: var(--accent);
+                color: #fff !important;
+                border-radius: var(--r-sm);
+                font-weight: 600;
+                font-size: 0.85rem !important;
+                letter-spacing: 0.01em;
+                transition: opacity 0.15s !important;
+            }
 
-      .hero p {
-        color: var(--ink-700);
-        font-size: 1.05rem;
-        line-height: 1.7;
-      }
+            .nav-cta:hover {
+                opacity: 0.85;
+                color: #fff !important;
+            }
 
-      .hero-cta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-top: 28px;
-      }
+            /* ─── hero ────────────────────────────────────────────────── */
+            .hero {
+                background: var(--dark);
+                padding: clamp(80px, 10vw, 130px) clamp(24px, 6vw, 80px)
+                    clamp(80px, 10vw, 120px);
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 60px;
+                align-items: center;
+            }
 
-      .button {
-        padding: 12px 22px;
-        border-radius: 999px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
+            @media (max-width: 860px) {
+                .hero {
+                    grid-template-columns: 1fr;
+                    gap: 48px;
+                }
+            }
 
-      .button.primary {
-        background: linear-gradient(135deg, var(--accent-500), #ffb978);
-        color: white;
-        box-shadow: 0 18px 30px rgba(255, 107, 74, 0.3);
-      }
+            .hero-eyebrow {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--accent);
+                font-size: 0.78rem;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                margin-bottom: 24px;
+            }
 
-      .button.secondary {
-        background: var(--glass);
-        border: 1px solid rgba(15, 23, 42, 0.08);
-        color: var(--ink-800);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-      }
+            .hero-eyebrow span {
+                display: inline-block;
+                width: 18px;
+                height: 2px;
+                background: var(--accent);
+                border-radius: 2px;
+            }
 
-      .button:hover {
-        transform: translateY(-2px);
-      }
+            .hero h1 {
+                font-size: clamp(2.4rem, 3.5vw + 1rem, 4.2rem);
+                font-weight: 700;
+                line-height: 1.08;
+                letter-spacing: -0.03em;
+                color: #ffffff;
+                margin-bottom: 24px;
+            }
 
-      .hero-card {
-        padding: 28px;
-        border-radius: var(--radius-lg);
-        background: var(--glass);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(18px);
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-      }
+            .hero h1 em {
+                font-style: normal;
+                color: var(--accent);
+            }
 
-      .hero-card .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.9rem;
-        color: var(--ink-700);
-        background: rgba(255, 255, 255, 0.75);
-        padding: 8px 14px;
-        border-radius: 999px;
-        width: fit-content;
-      }
+            .hero-sub {
+                font-size: 1.05rem;
+                line-height: 1.7;
+                color: rgba(255, 255, 255, 0.5);
+                max-width: 460px;
+                margin-bottom: 40px;
+                font-weight: 400;
+            }
 
-      .hero-card .stats {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
+            .hero-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
 
-      .stat {
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: var(--radius-sm);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 22px;
+                border-radius: var(--r-sm);
+                font-family: var(--sans);
+                font-size: 0.9rem;
+                font-weight: 600;
+                cursor: pointer;
+                border: none;
+                transition:
+                    opacity 0.15s,
+                    transform 0.15s;
+                letter-spacing: 0.01em;
+            }
 
-      .stat span {
-        color: var(--ink-500);
-        font-size: 0.85rem;
-      }
+            .btn:hover {
+                transform: translateY(-1px);
+                opacity: 0.88;
+            }
 
-      .stat strong {
-        font-size: 1.2rem;
-      }
+            .btn-primary {
+                background: var(--accent);
+                color: #fff;
+            }
 
-      .section-title {
-        font-family: "Playfair Display", serif;
-        font-size: 2rem;
-        margin: 0 0 16px;
-      }
+            .btn-ghost {
+                background: transparent;
+                color: rgba(255, 255, 255, 0.65);
+                border: 1px solid rgba(255, 255, 255, 0.14);
+            }
 
-      .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-        gap: 24px;
-      }
+            .btn-ghost:hover {
+                color: #fff;
+                border-color: rgba(255, 255, 255, 0.35);
+                opacity: 1;
+            }
 
-      .feature-card {
-        padding: 22px;
-        border-radius: var(--radius-md);
-        background: white;
-        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
-        border: 1px solid rgba(15, 23, 42, 0.05);
-      }
+            .btn svg {
+                width: 16px;
+                height: 16px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex-shrink: 0;
+            }
 
-      .feature-card h3 {
-        margin: 0 0 10px;
-        font-size: 1.1rem;
-      }
+            /* ─── app mock ────────────────────────────────────────────── */
+            .app-mock {
+                background: var(--dark-2);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: var(--r-lg);
+                overflow: hidden;
+                font-family: var(--mono);
+            }
 
-      .feature-card p {
-        margin: 0;
-        color: var(--ink-500);
-        line-height: 1.6;
-      }
+            .mock-titlebar {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 16px;
+                background: var(--dark-3);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
 
-      .workflow {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 24px;
-      }
+            .mock-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
 
-      .workflow-card {
-        padding: 22px;
-        border-radius: var(--radius-md);
-        background: linear-gradient(145deg, #fff, #f6f8ff);
-        border: 1px solid rgba(15, 23, 42, 0.08);
-      }
+            .mock-dot.red {
+                background: #ff5f56;
+            }
+            .mock-dot.yellow {
+                background: #ffbd2e;
+            }
+            .mock-dot.green {
+                background: #27c93f;
+            }
 
-      .workflow-card span {
-        font-size: 0.85rem;
-        color: var(--ink-500);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-      }
+            .mock-title {
+                flex: 1;
+                text-align: center;
+                font-size: 0.72rem;
+                color: rgba(255, 255, 255, 0.3);
+                font-family: var(--mono);
+                letter-spacing: 0.04em;
+            }
 
-      .workflow-card h4 {
-        margin: 12px 0 8px;
-      }
+            .mock-search {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
 
-      .workflow-card p {
-        margin: 0;
-        color: var(--ink-500);
-        line-height: 1.6;
-      }
+            .mock-search-icon {
+                color: rgba(255, 255, 255, 0.28);
+                font-size: 0.75rem;
+            }
 
-      .cta-panel {
-        padding: 32px;
-        border-radius: var(--radius-lg);
-        background: linear-gradient(135deg, rgba(255, 107, 74, 0.12), rgba(255, 187, 108, 0.2));
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        border: 1px solid rgba(255, 107, 74, 0.2);
-      }
+            .mock-search-text {
+                flex: 1;
+                font-size: 0.85rem;
+                color: rgba(255, 255, 255, 0.75);
+                font-family: var(--mono);
+            }
 
-      footer {
-        padding-top: 32px;
-        border-top: 1px solid rgba(15, 23, 42, 0.08);
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        color: var(--ink-500);
-      }
+            .mock-search-hint {
+                font-size: 0.7rem;
+                color: rgba(255, 255, 255, 0.22);
+                font-family: var(--mono);
+            }
 
-      .footer-links {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        font-weight: 600;
-      }
+            .mock-section-label {
+                padding: 8px 16px 4px;
+                font-size: 0.65rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: rgba(255, 255, 255, 0.22);
+                font-family: var(--sans);
+                font-weight: 600;
+            }
 
-      @media (max-width: 720px) {
-        .nav {
-          flex-direction: column;
-          align-items: flex-start;
-        }
+            .mock-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 10px 16px;
+                cursor: pointer;
+                transition: background 0.12s;
+            }
 
-        .hero-card .stats {
-          grid-template-columns: 1fr;
-        }
-      }
+            .mock-item.active {
+                background: rgba(232, 68, 34, 0.12);
+            }
+            .mock-item:not(.active):hover {
+                background: rgba(255, 255, 255, 0.04);
+            }
 
-      @keyframes floatIn {
-        from {
-          opacity: 0;
-          transform: translateY(18px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
+            .mock-item-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                display: grid;
+                place-items: center;
+                font-size: 0.7rem;
+                flex-shrink: 0;
+            }
 
-      .reveal {
-        animation: floatIn 0.6s ease both;
-      }
+            .mock-item-icon.code {
+                background: rgba(99, 102, 241, 0.18);
+                color: #818cf8;
+            }
+            .mock-item-icon.url {
+                background: rgba(16, 185, 129, 0.16);
+                color: #34d399;
+            }
+            .mock-item-icon.txt {
+                background: rgba(255, 255, 255, 0.07);
+                color: rgba(255, 255, 255, 0.4);
+            }
+            .mock-item-icon.pin {
+                background: rgba(232, 68, 34, 0.15);
+                color: var(--accent);
+            }
 
-      .delay-1 {
-        animation-delay: 0.1s;
-      }
+            .mock-item-body {
+                flex: 1;
+                min-width: 0;
+            }
 
-      .delay-2 {
-        animation-delay: 0.2s;
-      }
+            .mock-item-preview {
+                font-size: 0.78rem;
+                color: rgba(255, 255, 255, 0.75);
+                font-family: var(--mono);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
 
-      .delay-3 {
-        animation-delay: 0.3s;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="page">
-      <header class="reveal">
-        <div class="nav">
-          <div class="logo">
-            <span class="logo-mark">CS</span>
-            ClipStack
-          </div>
-          <nav class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#workflow">Workflow</a>
-            <a href="#download">Download</a>
-          </nav>
-        </div>
+            .mock-item.active .mock-item-preview {
+                color: #fff;
+            }
+
+            .mock-item-meta {
+                font-size: 0.65rem;
+                color: rgba(255, 255, 255, 0.25);
+                margin-top: 2px;
+                font-family: var(--sans);
+            }
+
+            .mock-footer {
+                display: flex;
+                gap: 16px;
+                padding: 10px 16px;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            .mock-footer-key {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 0.67rem;
+                color: rgba(255, 255, 255, 0.25);
+                font-family: var(--sans);
+            }
+
+            .mock-key {
+                display: inline-block;
+                padding: 2px 6px;
+                background: rgba(255, 255, 255, 0.07);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                font-size: 0.62rem;
+                font-family: var(--mono);
+                color: rgba(255, 255, 255, 0.4);
+            }
+
+            /* ─── shared section styles ───────────────────────────────── */
+            .section {
+                padding: clamp(72px, 9vw, 110px) clamp(24px, 6vw, 80px);
+            }
+
+            .section-alt {
+                background: var(--bg-alt);
+            }
+
+            .section-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.72rem;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin-bottom: 20px;
+            }
+
+            .section-label span {
+                display: inline-block;
+                width: 16px;
+                height: 2px;
+                background: var(--accent);
+                border-radius: 2px;
+            }
+
+            .section-title {
+                font-size: clamp(1.8rem, 2.5vw + 0.5rem, 2.8rem);
+                font-weight: 700;
+                letter-spacing: -0.03em;
+                line-height: 1.1;
+                color: var(--text);
+                margin-bottom: 16px;
+            }
+
+            .section-sub {
+                font-size: 1rem;
+                color: var(--text-2);
+                max-width: 500px;
+                line-height: 1.7;
+                margin-bottom: 56px;
+            }
+
+            /* ─── features ────────────────────────────────────────────── */
+            .feature-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1px;
+                background: var(--border);
+                border: 1px solid var(--border);
+                border-radius: var(--r-lg);
+                overflow: hidden;
+            }
+
+            .feature-card {
+                background: var(--bg);
+                padding: 32px 28px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                transition: background 0.15s;
+            }
+
+            .section-alt .feature-card {
+                background: var(--bg-alt);
+            }
+            .feature-card:hover {
+                background: #fafafa;
+            }
+            .section-alt .feature-card:hover {
+                background: #f1f1ef;
+            }
+
+            .feature-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: var(--r-sm);
+                background: var(--accent-dim);
+                display: grid;
+                place-items: center;
+                margin-bottom: 4px;
+            }
+
+            .feature-icon svg {
+                width: 18px;
+                height: 18px;
+                stroke: var(--accent);
+                fill: none;
+                stroke-width: 1.75;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .feature-card h3 {
+                font-size: 0.95rem;
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--text);
+            }
+
+            .feature-card p {
+                font-size: 0.875rem;
+                color: var(--text-2);
+                line-height: 1.65;
+            }
+
+            /* ─── workflow ────────────────────────────────────────────── */
+            .workflow {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 32px;
+            }
+
+            .step {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .step-num {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                font-weight: 500;
+                color: var(--accent);
+                letter-spacing: 0.06em;
+            }
+
+            .step h3 {
+                font-size: 1.05rem;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                color: var(--text);
+            }
+
+            .step p {
+                font-size: 0.875rem;
+                color: var(--text-2);
+                line-height: 1.7;
+            }
+
+            kbd {
+                display: inline-block;
+                padding: 2px 7px;
+                border: 1px solid var(--border);
+                border-bottom-width: 2px;
+                border-radius: 5px;
+                font-family: var(--mono);
+                font-size: 0.8em;
+                font-weight: 500;
+                background: var(--bg-alt);
+                color: var(--text);
+                line-height: 1.6;
+                white-space: nowrap;
+            }
+
+            .step-divider {
+                display: none;
+            }
+
+            @media (min-width: 860px) {
+                .workflow {
+                    align-items: start;
+                }
+            }
+
+            /* ─── stats bar ───────────────────────────────────────────── */
+            .stats-bar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1px;
+                background: var(--border);
+                border: 1px solid var(--border);
+                border-radius: var(--r-lg);
+                overflow: hidden;
+                margin-top: 64px;
+            }
+
+            .stat {
+                background: var(--bg);
+                padding: 28px 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .section-alt .stat {
+                background: var(--bg-alt);
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+                font-weight: 700;
+                letter-spacing: -0.03em;
+                color: var(--text);
+                font-family: var(--mono);
+            }
+
+            .stat-label {
+                font-size: 0.8rem;
+                color: var(--text-3);
+                font-weight: 500;
+            }
+
+            /* ─── download cta ────────────────────────────────────────── */
+            .download-block {
+                background: var(--dark);
+                border-radius: var(--r-lg);
+                padding: clamp(48px, 6vw, 72px) clamp(32px, 5vw, 64px);
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 40px;
+                align-items: center;
+            }
+
+            @media (max-width: 640px) {
+                .download-block {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .download-block h2 {
+                font-size: clamp(1.6rem, 2.5vw + 0.5rem, 2.5rem);
+                font-weight: 700;
+                color: #fff;
+                letter-spacing: -0.03em;
+                line-height: 1.15;
+                margin-bottom: 12px;
+            }
+
+            .download-block p {
+                font-size: 0.95rem;
+                color: rgba(255, 255, 255, 0.45);
+                line-height: 1.7;
+                max-width: 460px;
+            }
+
+            .download-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                flex-shrink: 0;
+            }
+
+            @media (max-width: 640px) {
+                .download-actions {
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                }
+            }
+
+            .btn-lg {
+                padding: 14px 28px;
+                font-size: 0.95rem;
+            }
+
+            /* ─── footer ──────────────────────────────────────────────── */
+            footer {
+                border-top: 1px solid var(--border);
+                padding: 36px clamp(24px, 6vw, 80px);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+
+            .footer-logo {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 600;
+                font-size: 0.875rem;
+                color: var(--text);
+                letter-spacing: -0.01em;
+            }
+
+            .footer-logo-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 2px;
+                background: var(--accent);
+            }
+
+            .footer-links {
+                display: flex;
+                gap: 20px;
+                flex-wrap: wrap;
+                list-style: none;
+            }
+
+            .footer-links a {
+                font-size: 0.8rem;
+                color: var(--text-3);
+                font-weight: 500;
+                transition: color 0.15s;
+            }
+
+            .footer-links a:hover {
+                color: var(--text);
+            }
+
+            .footer-copy {
+                font-size: 0.78rem;
+                color: var(--text-3);
+                white-space: nowrap;
+            }
+
+            /* ─── fade-in ─────────────────────────────────────────────── */
+            @keyframes fadeUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(16px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            [data-reveal] {
+                opacity: 0;
+                animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+            }
+
+            [data-reveal="1"] {
+                animation-delay: 0.05s;
+            }
+            [data-reveal="2"] {
+                animation-delay: 0.15s;
+            }
+            [data-reveal="3"] {
+                animation-delay: 0.25s;
+            }
+            [data-reveal="4"] {
+                animation-delay: 0.35s;
+            }
+
+            /* ─── responsive nav ──────────────────────────────────────── */
+            @media (max-width: 520px) {
+                .nav-links {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- NAV -->
+        <nav class="nav">
+            <a href="#" class="logo" aria-label="ClipStack home">
+                <span class="logo-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="9" y="2" width="6" height="4" rx="1" />
+                        <path
+                            d="M6 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"
+                        />
+                        <path d="M9 12h6M9 16h4" />
+                    </svg>
+                </span>
+                ClipStack
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#workflow">How it works</a></li>
+                <li><a href="#download" class="nav-cta">Download</a></li>
+            </ul>
+        </nav>
+
+        <!-- HERO -->
         <section class="hero">
-          <div>
-            <p class="badge">Local-first clipboard control</p>
-            <h1>Clipboard memory with a minimalist, lightning-fast overlay.</h1>
-            <p>
-              ClipStack keeps a trusted local history of everything you copy, with fuzzy search, snippets,
-              and quick paste workflows built for Windows power users.
-            </p>
-            <div class="hero-cta">
-              <a class="button primary" href="https://github.com/Shripad735/ClipStack/releases">Get the latest release</a>
-              <a class="button secondary" href="https://github.com/Shripad735/ClipStack">View on GitHub</a>
+            <div data-reveal="1">
+                <p class="hero-eyebrow">
+                    <span aria-hidden="true"></span>Local-first &middot; Windows
+                </p>
+                <h1>Clipboard memory,<br /><em>always at hand.</em></h1>
+                <p class="hero-sub">
+                    ClipStack is a fast, keyboard-driven clipboard manager that
+                    keeps your full copy history local — with fuzzy search,
+                    snippets, and smart workflows built for power users.
+                </p>
+                <div class="hero-actions">
+                    <a
+                        class="btn btn-primary btn-lg"
+                        href="https://github.com/Shripad735/ClipStack/releases"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download for Windows
+                    </a>
+                    <a
+                        class="btn btn-ghost"
+                        href="https://github.com/Shripad735/ClipStack"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S9.1 17.44 9 18v4"
+                            />
+                            <path d="M9 18c-4.51 2-5-2-7-2" />
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
             </div>
-          </div>
-          <div class="hero-card">
-            <div class="badge">Built for focus</div>
-            <div class="stats">
-              <div class="stat">
-                <span>Global Shortcut</span>
-                <strong>Ctrl + Shift + V</strong>
-              </div>
-              <div class="stat">
-                <span>Storage</span>
-                <strong>Local SQLite</strong>
-              </div>
-              <div class="stat">
-                <span>Search</span>
-                <strong>Fuzzy + Grouped</strong>
-              </div>
-              <div class="stat">
-                <span>Snippets</span>
-                <strong>Reusable text</strong>
-              </div>
+
+            <!-- App mock-up -->
+            <div
+                class="app-mock"
+                data-reveal="2"
+                role="img"
+                aria-label="ClipStack overlay preview"
+            >
+                <div class="mock-titlebar">
+                    <span class="mock-dot red" aria-hidden="true"></span>
+                    <span class="mock-dot yellow" aria-hidden="true"></span>
+                    <span class="mock-dot green" aria-hidden="true"></span>
+                    <span class="mock-title">ClipStack</span>
+                </div>
+                <div class="mock-search">
+                    <span class="mock-search-icon">⌕</span>
+                    <span class="mock-search-text">Search clips&hellip;</span>
+                    <span class="mock-search-hint">fuzzy</span>
+                </div>
+                <p class="mock-section-label">Pinned</p>
+                <div class="mock-item">
+                    <span class="mock-item-icon pin" aria-hidden="true">⊙</span>
+                    <div class="mock-item-body">
+                        <p class="mock-item-preview">
+                            npm install --save-dev @types/node
+                        </p>
+                        <p class="mock-item-meta">snippet &middot; pinned</p>
+                    </div>
+                </div>
+                <p class="mock-section-label">Recent</p>
+                <div class="mock-item active">
+                    <span class="mock-item-icon code" aria-hidden="true"
+                        >{}</span
+                    >
+                    <div class="mock-item-body">
+                        <p class="mock-item-preview">
+                            const handler = useCallback(() =&gt; {
+                        </p>
+                        <p class="mock-item-meta">code &middot; 2 min ago</p>
+                    </div>
+                </div>
+                <div class="mock-item">
+                    <span class="mock-item-icon url" aria-hidden="true">↗</span>
+                    <div class="mock-item-body">
+                        <p class="mock-item-preview">
+                            https://github.com/Shripad735/Clip…
+                        </p>
+                        <p class="mock-item-meta">url &middot; 14 min ago</p>
+                    </div>
+                </div>
+                <div class="mock-item">
+                    <span class="mock-item-icon txt" aria-hidden="true"
+                        >Aa</span
+                    >
+                    <div class="mock-item-body">
+                        <p class="mock-item-preview">
+                            Meeting at 3 pm — review PR #42
+                        </p>
+                        <p class="mock-item-meta">text &middot; 1 hr ago</p>
+                    </div>
+                </div>
+                <div class="mock-footer">
+                    <span class="mock-footer-key"
+                        ><span class="mock-key">↵</span> paste</span
+                    >
+                    <span class="mock-footer-key"
+                        ><span class="mock-key">⌘C</span> copy</span
+                    >
+                    <span class="mock-footer-key"
+                        ><span class="mock-key">Del</span> remove</span
+                    >
+                    <span class="mock-footer-key"
+                        ><span class="mock-key">Esc</span> close</span
+                    >
+                </div>
             </div>
-            <p>
-              Everything stays on-device. Capture text or images, pin important items, and export history in
-              one click.
-            </p>
-          </div>
         </section>
-      </header>
 
-      <section id="features" class="reveal delay-1">
-        <h2 class="section-title">Designed for lightning recall</h2>
-        <div class="feature-grid">
-          <article class="feature-card">
-            <h3>Smart history</h3>
-            <p>Automatically groups your clips, tracks duplicates, and keeps a tidy timeline.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Preview everything</h3>
-            <p>Inline previews for URLs, code, emails, file paths, and image snippets.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Pin and protect</h3>
-            <p>Pin essential clips, clear unpinned history, and keep sensitive content local.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Snippets vault</h3>
-            <p>Save reusable phrases and templates for fast pastes without the clutter.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Tray control</h3>
-            <p>Pause capture, open the overlay, or quit instantly from the system tray.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Export-ready</h3>
-            <p>Export clipboard history to JSON or CSV when you need a clean archive.</p>
-          </article>
-        </div>
-      </section>
+        <!-- FEATURES -->
+        <section class="section section-alt" id="features">
+            <div data-reveal="1">
+                <p class="section-label">
+                    <span aria-hidden="true"></span>Capabilities
+                </p>
+                <h2 class="section-title">
+                    Everything you need,<br />nothing you don't.
+                </h2>
+                <p class="section-sub">
+                    Five focused features that keep the overlay small and the
+                    workflow fast.
+                </p>
+            </div>
+            <div class="feature-grid" data-reveal="2">
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3h18v5H3zM3 10h18M9 15h6M9 19h6" />
+                        </svg>
+                    </div>
+                    <h3>Smart history</h3>
+                    <p>
+                        Automatically groups clips by type, deduplicates
+                        entries, and keeps a tidy timeline so you never lose
+                        track.
+                    </p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </div>
+                    <h3>Fuzzy search</h3>
+                    <p>
+                        Find any clip with a partial query. Results update
+                        instantly as you type, ranked by recency and relevance.
+                    </p>
+                </article>
+                <!-- <article class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                            />
+                        </svg>
+                    </div>
+                    <h3>Rich previews</h3>
+                    <p>
+                        URLs, code, emails, file paths, and images all get
+                        inline previews with type badges right in the list.
+                    </p>
+                </article> -->
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                            />
+                        </svg>
+                    </div>
+                    <h3>Pin &amp; protect</h3>
+                    <p>
+                        Pin critical clips so they survive history clears. All
+                        data lives on-device — nothing ever leaves your machine.
+                    </p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                            />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                    </div>
+                    <h3>Snippets vault</h3>
+                    <p>
+                        Save reusable phrases, boilerplate templates, and
+                        commands. Paste them in one keystroke from anywhere.
+                    </p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <polyline points="8 17 12 21 16 17" />
+                            <line x1="12" y1="12" x2="12" y2="21" />
+                            <path
+                                d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"
+                            />
+                        </svg>
+                    </div>
+                    <h3>Export history</h3>
+                    <p>
+                        Dump your full clipboard history to JSON or CSV with one
+                        click. Useful for archiving, audits, or migration.
+                    </p>
+                </article>
+            </div>
+        </section>
 
-      <section id="workflow" class="reveal delay-2">
-        <h2 class="section-title">A smooth daily flow</h2>
-        <div class="workflow">
-          <div class="workflow-card">
-            <span>1</span>
-            <h4>Summon instantly</h4>
-            <p>Hit <strong>Ctrl + Shift + V</strong> to open a compact overlay from anywhere.</p>
-          </div>
-          <div class="workflow-card">
-            <span>2</span>
-            <h4>Find in seconds</h4>
-            <p>Search fuzzy, filter by pinned state, and skim rich previews.</p>
-          </div>
-          <div class="workflow-card">
-            <span>3</span>
-            <h4>Paste with intent</h4>
-            <p>Choose copy or paste-on-select depending on your workflow preferences.</p>
-          </div>
-        </div>
-      </section>
+        <!-- WORKFLOW -->
+        <section class="section" id="workflow">
+            <div data-reveal="1">
+                <p class="section-label">
+                    <span aria-hidden="true"></span>How it works
+                </p>
+                <h2 class="section-title">
+                    Three keystrokes.<br />Full clipboard control.
+                </h2>
+                <p class="section-sub">
+                    ClipStack stays out of the way until you need it, then gets
+                    out of the way fast.
+                </p>
+            </div>
+            <div class="workflow" data-reveal="2">
+                <div class="step">
+                    <p class="step-num">01</p>
+                    <h3>Summon the overlay</h3>
+                    <p>
+                        Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>V</kbd> from
+                        anywhere on Windows. The compact overlay appears
+                        instantly on top of your current window.
+                    </p>
+                </div>
+                <div class="step">
+                    <p class="step-num">02</p>
+                    <h3>Search or browse</h3>
+                    <p>
+                        Start typing to fuzzy-search your history, or scroll
+                        through grouped clips. Filter by pinned items or content
+                        type in one keypress.
+                    </p>
+                </div>
+                <div class="step">
+                    <p class="step-num">03</p>
+                    <h3>Paste with intent</h3>
+                    <p>
+                        Hit <kbd>↵</kbd> to paste immediately, or
+                        <kbd>⌘C</kbd> to copy to clipboard. The overlay closes
+                        and you're back in your workflow.
+                    </p>
+                </div>
+            </div>
+            <div class="stats-bar" data-reveal="3">
+                <div class="stat">
+                    <span class="stat-value">Ctrl+Shift+V</span>
+                    <span class="stat-label">Global shortcut</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">SQLite</span>
+                    <span class="stat-label">Local storage</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">Tauri</span>
+                    <span class="stat-label">Rust + React</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">0 bytes</span>
+                    <span class="stat-label">Data sent externally</span>
+                </div>
+            </div>
+        </section>
 
-      <section id="download" class="reveal delay-3">
-        <div class="cta-panel">
-          <h2 class="section-title">Download ClipStack</h2>
-          <p>
-            Grab the latest Windows installer from GitHub Releases. ClipStack runs locally and keeps your
-            clipboard history private.
-          </p>
-          <div class="hero-cta">
-            <a class="button primary" href="https://github.com/Shripad735/ClipStack/releases">Download for Windows</a>
-            <a class="button secondary" href="https://github.com/Shripad735/ClipStack">Read the docs</a>
-          </div>
-        </div>
-      </section>
+        <!-- DOWNLOAD -->
+        <section class="section" id="download">
+            <div class="download-block" data-reveal="1">
+                <div>
+                    <h2>Ready to take control<br />of your clipboard?</h2>
+                    <p>
+                        Grab the latest Windows installer from GitHub Releases.
+                        ClipStack is free, open-source, and runs entirely on
+                        your machine.
+                    </p>
+                </div>
+                <div class="download-actions">
+                    <a
+                        class="btn btn-primary btn-lg"
+                        href="https://github.com/Shripad735/ClipStack/releases"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            style="
+                                width: 16px;
+                                height: 16px;
+                                stroke: currentColor;
+                                fill: none;
+                                stroke-width: 2;
+                                stroke-linecap: round;
+                                stroke-linejoin: round;
+                                flex-shrink: 0;
+                            "
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download .exe
+                    </a>
+                    <a
+                        class="btn btn-ghost"
+                        href="https://github.com/Shripad735/ClipStack"
+                        style="
+                            justify-content: center;
+                            border-color: rgba(255, 255, 255, 0.14);
+                            color: rgba(255, 255, 255, 0.6);
+                        "
+                    >
+                        View source
+                    </a>
+                </div>
+            </div>
+        </section>
 
-      <footer>
-        <div class="footer-links">
-          <a href="#features">Features</a>
-          <a href="#workflow">Workflow</a>
-          <a href="https://github.com/Shripad735/ClipStack/releases">Releases</a>
-          <a href="https://github.com/Shripad735/ClipStack/issues">Issues</a>
-        </div>
-        <span>ClipStack. Built with Tauri, React, and a local-first mindset.</span>
-      </footer>
-    </div>
-  </body>
+        <!-- FOOTER -->
+        <footer>
+            <span class="footer-logo">
+                <span class="footer-logo-dot" aria-hidden="true"></span>
+                ClipStack
+            </span>
+            <ul class="footer-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#workflow">How it works</a></li>
+                <li>
+                    <a href="https://github.com/Shripad735/ClipStack/releases"
+                        >Releases</a
+                    >
+                </li>
+                <li>
+                    <a href="https://github.com/Shripad735/ClipStack/issues"
+                        >Issues</a
+                    >
+                </li>
+                <li>
+                    <a href="https://github.com/Shripad735/ClipStack">GitHub</a>
+                </li>
+            </ul>
+            <span class="footer-copy">Built with Tauri &amp; React</span>
+        </footer>
+    </body>
 </html>
