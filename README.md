@@ -5,11 +5,21 @@ It gives you searchable clipboard history, pinning, cleanup controls, and quick 
 
 ## Screenshots
 
-| History | Snippets |
-| --- | --- |
-| ![ClipStack history view](images/01HomeUserInterface.png) | ![ClipStack snippets view](images/02SnippetsUserInterface.png) |
-| Settings | In use |
-| ![ClipStack settings view](images/03SettingsUserInterface.png) | ![ClipStack overlay over a working app](images/04UsingAppInNotepad.png) |
+### History
+
+![ClipStack history view](images/01HomeUserInterface.png)
+
+### Snippets
+
+![ClipStack snippets view](images/02SnippetsUserInterface.png)
+
+### Settings
+
+![ClipStack settings view](images/03SettingsUserInterface.png)
+
+### In use
+
+![ClipStack overlay over a working app](images/04UsingAppInNotepad.png)
 
 ## Features
 
