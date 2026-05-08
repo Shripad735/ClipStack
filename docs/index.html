@@ -264,8 +264,44 @@
                 flex-shrink: 0;
             }
 
+            .hero-shot {
+                position: relative;
+                border-radius: 22px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.02);
+                box-shadow:
+                    0 32px 80px rgba(0, 0, 0, 0.4),
+                    0 8px 24px rgba(0, 0, 0, 0.18);
+            }
+
+            .hero-shot img {
+                display: block;
+                width: 100%;
+                height: auto;
+            }
+
+            .hero-shot-badge {
+                position: absolute;
+                left: 18px;
+                bottom: 18px;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 9px 12px;
+                border-radius: 999px;
+                background: rgba(15, 15, 15, 0.82);
+                color: rgba(255, 255, 255, 0.82);
+                font-size: 0.78rem;
+                font-weight: 600;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+
             /* ─── app mock ────────────────────────────────────────────── */
             .app-mock {
+                display: none;
                 background: var(--dark-2);
                 border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: var(--r-lg);
@@ -545,6 +581,51 @@
                 font-size: 0.875rem;
                 color: var(--text-2);
                 line-height: 1.65;
+            }
+
+            .screenshot-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 24px;
+            }
+
+            @media (max-width: 980px) {
+                .screenshot-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .screenshot-card {
+                display: grid;
+                gap: 16px;
+            }
+
+            .screenshot-frame {
+                border-radius: 18px;
+                overflow: hidden;
+                border: 1px solid var(--border);
+                background: #111;
+                box-shadow: 0 18px 40px rgba(15, 15, 15, 0.08);
+            }
+
+            .screenshot-frame img {
+                display: block;
+                width: 100%;
+                height: auto;
+            }
+
+            .screenshot-copy h3 {
+                font-size: 1rem;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                color: var(--text);
+                margin-bottom: 6px;
+            }
+
+            .screenshot-copy p {
+                font-size: 0.9rem;
+                color: var(--text-2);
+                line-height: 1.7;
             }
 
             /* ─── workflow ────────────────────────────────────────────── */
@@ -849,6 +930,16 @@
                 </div>
             </div>
 
+            <figure class="hero-shot" data-reveal="2">
+                <img
+                    src="images/04UsingAppInNotepad.png"
+                    alt="ClipStack overlay open over an online notepad window"
+                />
+                <figcaption class="hero-shot-badge">
+                    Real app UI in an active workflow
+                </figcaption>
+            </figure>
+
             <!-- App mock-up -->
             <div
                 class="app-mock"
@@ -1032,6 +1123,69 @@
             </div>
         </section>
 
+        <!-- SCREENSHOTS -->
+        <section class="section" id="screenshots">
+            <div data-reveal="1">
+                <p class="section-label">
+                    <span aria-hidden="true"></span>Product tour
+                </p>
+                <h2 class="section-title">
+                    The real interface,<br />not a conceptual mock.
+                </h2>
+                <p class="section-sub">
+                    Browse history, save snippets, and tune behavior from the
+                    same compact overlay without losing context.
+                </p>
+            </div>
+            <div class="screenshot-grid" data-reveal="2">
+                <article class="screenshot-card">
+                    <div class="screenshot-frame">
+                        <img
+                            src="images/01HomeUserInterface.png"
+                            alt="ClipStack history view with grouped clipboard items"
+                        />
+                    </div>
+                    <div class="screenshot-copy">
+                        <h3>History view</h3>
+                        <p>
+                            Search, scan, pin, and delete recent clips from the
+                            keyboard-first home screen.
+                        </p>
+                    </div>
+                </article>
+                <article class="screenshot-card">
+                    <div class="screenshot-frame">
+                        <img
+                            src="images/02SnippetsUserInterface.png"
+                            alt="ClipStack snippets panel for saved reusable text"
+                        />
+                    </div>
+                    <div class="screenshot-copy">
+                        <h3>Snippets panel</h3>
+                        <p>
+                            Keep reusable commands, phrases, and templates ready
+                            to paste in one move.
+                        </p>
+                    </div>
+                </article>
+                <article class="screenshot-card">
+                    <div class="screenshot-frame">
+                        <img
+                            src="images/03SettingsUserInterface.png"
+                            alt="ClipStack settings panel with capture and maintenance controls"
+                        />
+                    </div>
+                    <div class="screenshot-copy">
+                        <h3>Settings and maintenance</h3>
+                        <p>
+                            Control retention, launch behavior, export options,
+                            and cleanup without leaving the app.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
         <!-- WORKFLOW -->
         <section class="section" id="workflow">
             <div data-reveal="1">
@@ -1051,9 +1205,9 @@
                     <p class="step-num">01</p>
                     <h3>Summon the overlay</h3>
                     <p>
-                        Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>V</kbd> from
-                        anywhere on Windows. The compact overlay appears
-                        instantly on top of your current window.
+                        Press <kbd>Alt</kbd> <kbd>V</kbd> from anywhere on
+                        Windows. The compact overlay appears instantly on top of
+                        your current window.
                     </p>
                 </div>
                 <div class="step">
@@ -1077,7 +1231,7 @@
             </div>
             <div class="stats-bar" data-reveal="3">
                 <div class="stat">
-                    <span class="stat-value">Ctrl+Shift+V</span>
+                    <span class="stat-value">Alt+V</span>
                     <span class="stat-label">Global shortcut</span>
                 </div>
                 <div class="stat">
