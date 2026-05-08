@@ -26,6 +26,11 @@ pub struct AppState {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Err(error) = window::show_overlay(app) {
+                eprintln!("failed to show ClipStack from second instance: {error}");
+            }
+        }))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, _, event| {
@@ -59,8 +64,7 @@ fn main() {
             {
                 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 
-                let shortcut =
-                    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyV);
+                let shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyV);
                 app.global_shortcut()
                     .register(shortcut)
                     .map_err(|error| error.to_string())?;
