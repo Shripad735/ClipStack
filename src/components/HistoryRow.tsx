@@ -256,7 +256,7 @@ export function HistoryRow({
           {imageDimensions ? (
             <span className="pill pill-muted">{imageDimensions}</span>
           ) : null}
-          <span className="pill">{createdLabel}</span>
+          <span className="pill timestamp-pill">{createdLabel}</span>
         </div>
         <div className="history-row-actions">
           <button

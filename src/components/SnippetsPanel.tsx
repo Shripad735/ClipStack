@@ -142,7 +142,7 @@ export function SnippetsPanel({ onStatus }: SnippetsPanelProps) {
                   >
                     {snippet.title || "Untitled snippet"}
                   </h3>
-                  <span className="pill pill-muted">
+                  <span className="pill pill-muted timestamp-pill">
                     {new Intl.DateTimeFormat(undefined, {
                       month: "short",
                       day: "numeric",
