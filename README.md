@@ -3,9 +3,17 @@
 ClipStack is a fast, local-first clipboard manager for Windows built with Tauri + React.
 It gives you searchable clipboard history, pinning, cleanup controls, and quick paste workflows from a lightweight overlay UI.
 
+## Screenshots
+
+| History | Snippets |
+| --- | --- |
+| ![ClipStack history view](images/01HomeUserInterface.png) | ![ClipStack snippets view](images/02SnippetsUserInterface.png) |
+| Settings | In use |
+| ![ClipStack settings view](images/03SettingsUserInterface.png) | ![ClipStack overlay over a working app](images/04UsingAppInNotepad.png) |
+
 ## Features
 
-- Global shortcut overlay (`Ctrl` + `Shift` + `V`)
+- Global shortcut overlay (`Alt` + `V`)
 - Clipboard history for text and images with local SQLite storage
 - Fuzzy search with grouping (Pinned, Today, Earlier) and duplicate counts
 - Content type chips with inline previews (URLs, email, file paths, code, images)
@@ -64,11 +72,11 @@ npm run tauri build
 
 Generated installer output (default):
 
-- `src-tauri/target/release/bundle/nsis/ClipStack_0.1.0_x64-setup.exe`
+- `src-tauri/target/release/bundle/nsis/ClipStack_<version>_x64-setup.exe`
 
 ## Keyboard Shortcuts
 
-- `Ctrl + Shift + V` - Toggle ClipStack overlay
+- `Alt + V` - Toggle ClipStack overlay
 - `Arrow Up / Arrow Down` - Navigate items
 - `Enter` - Select item (copy/paste behavior follows settings)
 - `Delete` - Delete selected item (when search box is empty)
