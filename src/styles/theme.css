@@ -303,10 +303,6 @@ mark {
     padding: 7px 9px;
 }
 
-.search-shell:focus-within {
-    box-shadow: 0 0 0 2px var(--accent);
-}
-
 .tab-strip {
     display: flex;
     gap: 6px;
@@ -333,10 +329,6 @@ mark {
     color: #f8fff3;
     font-size: 0.86rem;
     border-radius: 8px;
-}
-
-.search-input:focus {
-    box-shadow: 0 0 0 2px var(--accent);
 }
 
 .search-input::placeholder,
