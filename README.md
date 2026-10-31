@@ -123,6 +123,21 @@ ClipStack is local-first:
 - Export/import history
 - Additional customization and shortcuts
 
+## Troubleshooting
+
+ClipStack writes a log of every start, overlay show and error to
+`%APPDATA%\com.clipstack.desktop\logs\clipstack.log`. The tray menu and the settings panel both have an
+**Open log folder** action.
+
+- **The overlay does not appear** — the window stays hidden until its renderer has painted, so it can no
+  longer sit invisibly on top of the screen. If it still will not open, press `Ctrl+Alt+Shift+Q` to quit
+  ClipStack immediately and start it again.
+- **Desktop feels frozen after a cold boot** — run the app with `--safe-mode` to disable GPU composition
+  and the launch-on-login sync. The header shows a `Safe mode` pill while it is active.
+- **Need more detail** — start with `--verbose` to add debug lines to the log.
+- **Overlay geometry** — the last position is remembered in `window-position.json` and clamped to a
+  connected monitor, so a disconnected display cannot hide the window off-screen.
+
 ## Website
 
 The static project site lives in `docs/` and is deployed to GitHub Pages via `.github/workflows/pages.yml` when changes are pushed to the `docs/` folder.

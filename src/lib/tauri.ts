@@ -208,3 +208,53 @@ export async function exportHistory(format: "json" | "csv") {
 
   return invokeCommand<string>("export_history", { format });
 }
+
+export type RuntimeInfo = {
+  version: string;
+  safeMode: boolean;
+  logPath: string;
+  logDir: string;
+};
+
+/** Tells the backend that the overlay has painted and may be shown. */
+export async function markOverlayReady() {
+  if (!isTauriRuntime()) {
+    return;
+  }
+
+  await invokeCommand("overlay_ready");
+}
+
+/** Renderer heartbeat consumed by the UI watchdog. */
+export async function sendHeartbeat() {
+  if (!isTauriRuntime()) {
+    return;
+  }
+
+  await invokeCommand("heartbeat");
+}
+
+export async function fetchRuntimeInfo(): Promise<RuntimeInfo | null> {
+  if (!isTauriRuntime()) {
+    return null;
+  }
+
+  return invokeCommand<RuntimeInfo>("get_runtime_info");
+}
+
+export async function openLogsFolder() {
+  if (!isTauriRuntime()) {
+    return;
+  }
+
+  await invokeCommand("open_logs_folder");
+}
+
+export async function restartApplication() {
+  if (!isTauriRuntime()) {
+    return;
+  }
+
+  await invokeCommand("restart_app");
+}
+

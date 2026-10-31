@@ -115,9 +115,34 @@ impl Storage {
             )
             .map_err(|error| error.to_string())?;
 
-        let defaults = AppSettings::default();
-        self.save_settings(&defaults)?;
+        // Only keys that do not exist yet are written. Upserting the defaults
+        // here used to reset every user setting on each launch.
+        self.ensure_default_settings(&AppSettings::default())?;
         self.prune_media_directory()?;
+        Ok(())
+    }
+
+    fn ensure_default_settings(&mut self, settings: &AppSettings) -> Result<(), String> {
+        let settings = settings.clone().sanitized();
+        let defaults = [
+            ("history_limit", settings.history_limit.to_string()),
+            ("retention_days", settings.retention_days.to_string()),
+            ("capture_enabled", bool_to_string(settings.capture_enabled)),
+            ("launch_on_login", bool_to_string(settings.launch_on_login)),
+            ("paste_on_select", bool_to_string(settings.paste_on_select)),
+            ("hide_after_copy", bool_to_string(settings.hide_after_copy)),
+            ("show_on_launch", bool_to_string(settings.show_on_launch)),
+        ];
+
+        for (key, value) in defaults {
+            self.connection
+                .execute(
+                    "INSERT OR IGNORE INTO settings(key, value) VALUES(?1, ?2)",
+                    params![key, value],
+                )
+                .map_err(|error| error.to_string())?;
+        }
+
         Ok(())
     }
 
@@ -642,10 +667,23 @@ impl Storage {
             referenced.into_iter().map(PathBuf::from).collect();
 
         for entry in fs::read_dir(&self.media_dir).map_err(|error| error.to_string())? {
-            let entry = entry.map_err(|error| error.to_string())?;
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(error) => {
+                    log::debug!("skipping an unreadable media entry: {error}");
+                    continue;
+                }
+            };
             let path = entry.path();
             if path.is_file() && !referenced.contains(&path) {
-                fs::remove_file(path).map_err(|error| error.to_string())?;
+                // A locked file (antivirus, search indexer) must not abort the
+                // whole startup; it will be retried on the next cleanup.
+                if let Err(error) = fs::remove_file(&path) {
+                    log::warn!(
+                        "could not remove unused media file {}: {error}",
+                        path.display()
+                    );
+                }
             }
         }
 
@@ -956,5 +994,24 @@ mod tests {
         assert!(image.image_path.is_some());
         assert_eq!(image.image_width, Some(2));
         assert_eq!(image.image_height, Some(2));
+    }
+
+    #[test]
+    fn settings_survive_reopening_the_database() {
+        let mut storage = storage();
+
+        let mut settings = storage.load_settings().expect("settings");
+        settings.history_limit = 77;
+        settings.capture_enabled = false;
+        settings.show_on_launch = false;
+        storage.save_settings(&settings).expect("save");
+
+        // Simulate the next launch: initialize() runs again over the same data.
+        storage.initialize().expect("re-initialize");
+
+        let reloaded = storage.load_settings().expect("reload");
+        assert_eq!(reloaded.history_limit, 77);
+        assert!(!reloaded.capture_enabled);
+        assert!(!reloaded.show_on_launch);
     }
 }

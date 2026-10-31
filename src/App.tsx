@@ -13,7 +13,16 @@ import { SearchInput } from "./components/SearchInput";
 import { SnippetsPanel } from "./components/SnippetsPanel";
 import { useClipboardHistory } from "./hooks/useClipboardHistory";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
-import { hideOverlay } from "./lib/tauri";
+import {
+  desktopListen,
+  fetchRuntimeInfo,
+  hideOverlay,
+  markOverlayReady,
+  openLogsFolder,
+  restartApplication,
+  sendHeartbeat,
+  type RuntimeInfo,
+} from "./lib/tauri";
 
 function App() {
   const {
@@ -35,6 +44,7 @@ function App() {
   const [showShortcutHintBar, setShowShortcutHintBar] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
   const [activeTab, setActiveTab] = useState<"history" | "snippets">("history");
+  const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -135,8 +145,74 @@ function App() {
     return () => window.clearTimeout(hideTimer);
   }, []);
 
+  // The overlay window stays hidden until the renderer reports its first paint,
+  // so a broken WebView2 can never present an invisible always-on-top window.
+  // `requestAnimationFrame` does not run while the window is hidden, so the
+  // mount itself is the readiness signal.
+  useEffect(() => {
+    let cancelled = false;
+
+    void markOverlayReady();
+
+    void fetchRuntimeInfo()
+      .then((info) => {
+        if (!cancelled) {
+          setRuntimeInfo(info);
+        }
+      })
+      .catch(() => undefined);
+
+    inputRef.current?.focus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Renderer heartbeat. requestAnimationFrame pauses while the window is hidden
+  // and stops entirely if the renderer wedges, which is exactly the signal the
+  // Rust watchdog needs.
+  useEffect(() => {
+    let frame = 0;
+    let lastSent = 0;
+
+    const tick = (time: number) => {
+      if (time - lastSent >= 500) {
+        lastSent = time;
+        void sendHeartbeat();
+      }
+      frame = window.requestAnimationFrame(tick);
+    };
+
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  // Re-focus the search box every time the overlay is shown.
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    void desktopListen("overlay-focus", () => {
+      window.setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 10);
+    }).then((stop) => {
+      unsubscribe = stop;
+    });
+
+    return () => unsubscribe?.();
+  }, []);
+
   useEffect(() => {
     const handleWindowKeyDown = (event: KeyboardEvent) => {
+      // Escape closes the settings panel before it closes the overlay itself.
+      if (event.key === "Escape" && isSettingsOpen) {
+        event.preventDefault();
+        setIsSettingsOpen(false);
+        return;
+      }
+
       if (event.key === "?" || (event.key === "/" && event.shiftKey)) {
         event.preventDefault();
         setShowShortcutHintBar(true);
@@ -148,7 +224,7 @@ function App() {
 
     window.addEventListener("keydown", handleWindowKeyDown);
     return () => window.removeEventListener("keydown", handleWindowKeyDown);
-  }, [onWindowKeyDown]);
+  }, [isSettingsOpen, onWindowKeyDown]);
 
   useEffect(() => {
     const hideOnBlur = () => {
@@ -162,6 +238,22 @@ function App() {
     };
   }, []);
 
+  const handleOpenLogs = () => {
+    void openLogsFolder()
+      .then(() => showToast("Opened the ClipStack log folder."))
+      .catch((logsError) => {
+        showToast(
+          logsError instanceof Error
+            ? logsError.message
+            : "Unable to open the log folder.",
+        );
+      });
+  };
+
+  const handleRestart = () => {
+    void restartApplication();
+  };
+
   return (
     <OverlayShell
       isDesktop={isDesktop}
@@ -169,10 +261,14 @@ function App() {
       itemCount={history.length}
       captureEnabled={settings.captureEnabled}
       isSettingsOpen={isSettingsOpen}
+      safeMode={runtimeInfo?.safeMode ?? false}
+      runtimeInfo={runtimeInfo}
       onClearUnpinned={() => void clearUnpinned()}
       onExportHistory={(format) => void handleExport(format)}
       onRefresh={() => void refresh()}
       onToggleSettings={() => setIsSettingsOpen((open) => !open)}
+      onOpenLogs={handleOpenLogs}
+      onRestart={handleRestart}
       settings={settings}
       onSettingsChange={(next) => void updateSettings(next)}
     >

@@ -504,12 +504,13 @@ dependencies = [
 
 [[package]]
 name = "clipstack"
-version = "0.1.0"
+version = "1.2.2"
 dependencies = [
  "arboard",
  "base64 0.22.1",
  "dirs 6.0.0",
  "image",
+ "log",
  "rusqlite",
  "serde",
  "serde_json",

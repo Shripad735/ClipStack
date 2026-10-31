@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
-import type { AppSettings } from "../lib/tauri";
+import type { AppSettings, RuntimeInfo } from "../lib/tauri";
 import { hideOverlay } from "../lib/tauri";
 
 type OverlayShellProps = PropsWithChildren<{
@@ -8,11 +9,15 @@ type OverlayShellProps = PropsWithChildren<{
   isLoading: boolean;
   captureEnabled: boolean;
   isSettingsOpen: boolean;
+  safeMode: boolean;
+  runtimeInfo: RuntimeInfo | null;
   settings: AppSettings;
   onToggleSettings: () => void;
   onRefresh: () => void;
   onClearUnpinned: () => void;
   onExportHistory: (format: "json" | "csv") => void;
+  onOpenLogs: () => void;
+  onRestart: () => void;
   onSettingsChange: (settings: AppSettings) => void;
 }>;
 
@@ -23,13 +28,59 @@ export function OverlayShell({
   isLoading,
   captureEnabled,
   isSettingsOpen,
+  safeMode,
+  runtimeInfo,
   settings,
   onToggleSettings,
   onRefresh,
   onClearUnpinned,
   onExportHistory,
+  onOpenLogs,
+  onRestart,
   onSettingsChange,
 }: OverlayShellProps) {
+  // Numeric settings are edited in a local draft and only committed on blur or
+  // Enter. Committing on every keystroke used to prune the history down to the
+  // intermediate value while the user was still typing.
+  const [historyLimitDraft, setHistoryLimitDraft] = useState(
+    String(settings.historyLimit),
+  );
+  const [retentionDaysDraft, setRetentionDaysDraft] = useState(
+    String(settings.retentionDays),
+  );
+
+  useEffect(() => {
+    setHistoryLimitDraft(String(settings.historyLimit));
+  }, [settings.historyLimit]);
+
+  useEffect(() => {
+    setRetentionDaysDraft(String(settings.retentionDays));
+  }, [settings.retentionDays]);
+
+  const commitHistoryLimit = () => {
+    const parsed = Number.parseInt(historyLimitDraft, 10);
+    const next = Number.isFinite(parsed)
+      ? Math.min(500, Math.max(25, parsed))
+      : settings.historyLimit;
+
+    setHistoryLimitDraft(String(next));
+    if (next !== settings.historyLimit) {
+      onSettingsChange({ ...settings, historyLimit: next });
+    }
+  };
+
+  const commitRetentionDays = () => {
+    const parsed = Number.parseInt(retentionDaysDraft, 10);
+    const next = Number.isFinite(parsed)
+      ? Math.min(365, Math.max(1, parsed))
+      : settings.retentionDays;
+
+    setRetentionDaysDraft(String(next));
+    if (next !== settings.retentionDays) {
+      onSettingsChange({ ...settings, retentionDays: next });
+    }
+  };
+
   return (
     <main className="overlay-root">
       <section
@@ -63,9 +114,12 @@ export function OverlayShell({
         </header>
 
         <div className="header-meta">
-          <span>{itemCount} items</span>
+          <span>
+            {itemCount} {itemCount === 1 ? "item" : "items"}
+          </span>
           <span>{captureEnabled ? "Capture on" : "Capture paused"}</span>
           <span>{isDesktop ? "Desktop" : "Preview"}</span>
+          {safeMode ? <span>Safe mode</span> : null}
           {isLoading ? <span>Loading...</span> : null}
         </div>
 
@@ -81,13 +135,14 @@ export function OverlayShell({
                 type="number"
                 min={25}
                 max={500}
-                value={settings.historyLimit}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    historyLimit: Number(event.target.value),
-                  })
-                }
+                value={historyLimitDraft}
+                onChange={(event) => setHistoryLimitDraft(event.target.value)}
+                onBlur={commitHistoryLimit}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                  }
+                }}
               />
             </label>
             <label>
@@ -96,13 +151,14 @@ export function OverlayShell({
                 type="number"
                 min={1}
                 max={365}
-                value={settings.retentionDays}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    retentionDays: Number(event.target.value),
-                  })
-                }
+                value={retentionDaysDraft}
+                onChange={(event) => setRetentionDaysDraft(event.target.value)}
+                onBlur={commitRetentionDays}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                  }
+                }}
               />
             </label>
 
@@ -203,6 +259,28 @@ export function OverlayShell({
                 Export CSV
               </button>
             </div>
+
+            <div className="settings-group">
+              <h2>Diagnostics</h2>
+              <p>
+                ClipStack keeps a log of every show, start and error. Send it
+                along if the overlay ever stops responding.
+              </p>
+            </div>
+            <div className="settings-export-actions">
+              <button className="ghost-button" type="button" onClick={onOpenLogs}>
+                Open logs
+              </button>
+              <button className="ghost-button" type="button" onClick={onRestart}>
+                Restart app
+              </button>
+            </div>
+            {runtimeInfo ? (
+              <p className="settings-hint">
+                ClipStack v{runtimeInfo.version}
+                {runtimeInfo.safeMode ? " · Safe mode" : ""}
+              </p>
+            ) : null}
           </section>
         ) : (
           children

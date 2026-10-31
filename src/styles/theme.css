@@ -1,14 +1,18 @@
 :root {
     color-scheme: dark;
     font-family: "Segoe UI Variable", "Aptos", "Segoe UI", sans-serif;
-    background: transparent;
+    background: #17191d;
     color: #eef4ee;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    --bg: rgba(26, 29, 33, 0.96);
-    --bg-soft: rgba(36, 40, 45, 0.98);
+    /* The overlay window is opaque: transparency on Windows forces the fragile
+       DWM blur-behind compositing path and is what made the overlay able to
+       appear as an invisible, always-on-top window after a cold boot. */
+    --app-bg: #17191d;
+    --bg: #1b1e22;
+    --bg-soft: #23272c;
     --border: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.16);
     --text-soft: #b7c0ca;
@@ -31,12 +35,7 @@ body,
     padding: 0;
     height: 100%;
     overflow: hidden;
-    border-radius: 12px;
-    background: transparent;
-}
-
-body {
-    background: transparent;
+    background: var(--app-bg);
 }
 
 button,
@@ -58,8 +57,7 @@ mark {
     flex-direction: column;
     height: 100vh;
     width: 100vw;
-    background: transparent;
-    border-radius: 12px;
+    background: var(--app-bg);
     overflow: hidden;
 }
 
@@ -67,18 +65,11 @@ mark {
     position: relative;
     width: 100%;
     height: 100vh;
-    border-radius: 12px;
-    /* inset ring replaces border so the curve is drawn inside the radius,
-       eliminating any corner mismatch with the outer overflow:hidden clip */
-    box-shadow:
-        inset 0 0 0 1px var(--border),
-        0 8px 32px rgba(0, 0, 0, 0.6);
-    background: linear-gradient(
-        180deg,
-        rgba(35, 39, 44, 0.98) 0%,
-        rgba(23, 25, 29, 0.98) 100%
-    );
-    backdrop-filter: blur(22px);
+    /* Windows 11 rounds the window itself (DWM), so the card is flush with the
+       window edges instead of relying on a transparent window for the corners. */
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px var(--border);
+    background: linear-gradient(180deg, #23272c 0%, #17191d 100%);
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -597,6 +588,13 @@ mark {
     flex-wrap: wrap;
 }
 
+.settings-hint {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.74rem;
+    letter-spacing: 0.01em;
+}
+
 .snippets-panel {
     display: flex;
     flex-direction: column;
@@ -805,7 +803,6 @@ mark {
         opacity 200ms ease,
         transform 200ms ease;
     pointer-events: none;
-    backdrop-filter: blur(8px);
 }
 
 .shortcut-hint-bar-visible {
