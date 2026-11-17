@@ -209,6 +209,22 @@ export async function exportHistory(format: "json" | "csv") {
   return invokeCommand<string>("export_history", { format });
 }
 
+export async function saveImageItem(id: number) {
+  if (!isTauriRuntime()) {
+    throw new Error("Saving images is only available in the desktop app runtime.");
+  }
+
+  return invokeCommand<string>("save_image_item", { id });
+}
+
+export async function revealImageItem(id: number) {
+  if (!isTauriRuntime()) {
+    throw new Error("Revealing files is only available in the desktop app runtime.");
+  }
+
+  await invokeCommand("reveal_image_item", { id });
+}
+
 export type RuntimeInfo = {
   version: string;
   safeMode: boolean;

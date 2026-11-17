@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import type { ClipboardEntry } from "../lib/tauri";
-import { resolveClipboardImageSrc } from "../lib/tauri";
+import {
+  resolveClipboardImageSrc,
+  revealImageItem,
+  saveImageItem,
+} from "../lib/tauri";
+import { ImageZoomModal } from "./ImageZoomModal";
 
 type HistoryRowProps = {
   item: ClipboardEntry;
@@ -12,6 +17,7 @@ type HistoryRowProps = {
   onDelete: () => void;
   onTogglePin: () => void;
   onToggleExpand: () => void;
+  onStatus: (message: string) => void;
 };
 
 type ContentType = "url" | "email" | "filepath" | "code" | "image" | "text";
@@ -232,6 +238,7 @@ export function HistoryRow({
   onDelete,
   onTogglePin,
   onToggleExpand,
+  onStatus,
 }: HistoryRowProps) {
   const meta = contentTypeMeta(item);
   const createdLabel = formatRelativeAge(item.createdAt);
@@ -239,20 +246,69 @@ export function HistoryRow({
   const imageSrc = resolveClipboardImageSrc(item.imagePath, item.content);
   const imageDimensions = formatImageDimensions(item);
   const [imageFailed, setImageFailed] = useState(false);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [isImageBusy, setIsImageBusy] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
   }, [imageSrc, item.id]);
+
+  useEffect(() => {
+    if (item.kind !== "image") {
+      setIsZoomOpen(false);
+    }
+  }, [item.kind, item.id]);
 
   // When expanded, row clicks must not copy: the user is selecting text.
   const handleRowClick = () => {
     if (isExpanded) {
       return;
     }
+    if (item.kind === "image") {
+      setIsZoomOpen(true);
+      return;
+    }
     onSelect();
   };
 
+  const handleSaveImage = async () => {
+    if (isImageBusy) {
+      return;
+    }
+    setIsImageBusy(true);
+    try {
+      const outputPath = await saveImageItem(item.id);
+      onStatus(`Saved image to ${outputPath}`);
+    } catch (saveError) {
+      onStatus(
+        saveError instanceof Error ? saveError.message : "Unable to save image.",
+      );
+    } finally {
+      setIsImageBusy(false);
+    }
+  };
+
+  const handleRevealImage = async () => {
+    if (isImageBusy) {
+      return;
+    }
+    setIsImageBusy(true);
+    try {
+      await revealImageItem(item.id);
+      onStatus("Revealed image file in Explorer.");
+    } catch (revealError) {
+      onStatus(
+        revealError instanceof Error
+          ? revealError.message
+          : "Unable to reveal image file.",
+      );
+    } finally {
+      setIsImageBusy(false);
+    }
+  };
+
   return (
+    <>
     <article
       id={String(item.id)}
       className={rowClassName}
@@ -273,17 +329,31 @@ export function HistoryRow({
           {isExpanded ? <span className="pill pill-muted">Preview</span> : null}
         </div>
         <div className="history-row-actions">
-          <button
-            type="button"
-            className="icon-button"
-            title={isExpanded ? "Collapse preview (Space/Esc)" : "Expand preview (Space)"}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleExpand();
-            }}
-          >
-            {isExpanded ? "Less" : "More"}
-          </button>
+          {item.kind === "image" ? (
+            <button
+              type="button"
+              className="icon-button"
+              title="Open full-size zoom"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsZoomOpen(true);
+              }}
+            >
+              Zoom
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="icon-button"
+              title={isExpanded ? "Collapse preview (Space/Esc)" : "Expand preview (Space)"}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleExpand();
+              }}
+            >
+              {isExpanded ? "Less" : "More"}
+            </button>
+          )}
           {isExpanded ? (
             <button
               type="button"
@@ -325,19 +395,37 @@ export function HistoryRow({
         onClick={isExpanded ? (event) => event.stopPropagation() : undefined}
       >
         {item.kind === "image" ? (
-          <div className="history-image-preview-shell">
+          <div
+            className="history-image-preview-shell history-image-zoomable"
+            role="button"
+            tabIndex={0}
+            title="Click to zoom"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsZoomOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.stopPropagation();
+                setIsZoomOpen(true);
+              }
+            }}
+          >
             {imageSrc && !imageFailed ? (
-              <img
-                className="history-image-preview"
-                src={imageSrc}
-                alt={
-                  imageDimensions
-                    ? `Clipboard image ${imageDimensions}`
-                    : "Clipboard image preview"
-                }
-                loading="lazy"
-                onError={() => setImageFailed(true)}
-              />
+              <>
+                <img
+                  className="history-image-preview"
+                  src={imageSrc}
+                  alt={
+                    imageDimensions
+                      ? `Clipboard image ${imageDimensions}`
+                      : "Clipboard image preview"
+                  }
+                  loading="lazy"
+                  onError={() => setImageFailed(true)}
+                />
+                <span className="history-image-zoom-hint">Click to zoom</span>
+              </>
             ) : (
               <div
                 className="history-image-placeholder"
@@ -358,5 +446,17 @@ export function HistoryRow({
         )}
       </div>
     </article>
+    {isZoomOpen && item.kind === "image" ? (
+      <ImageZoomModal
+        imageSrc={imageSrc}
+        dimensionsLabel={imageDimensions}
+        itemId={item.id}
+        isBusy={isImageBusy}
+        onClose={() => setIsZoomOpen(false)}
+        onSave={() => void handleSaveImage()}
+        onReveal={() => void handleRevealImage()}
+      />
+    ) : null}
+  </>
   );
 }

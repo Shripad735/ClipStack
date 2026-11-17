@@ -12,6 +12,7 @@ type HistoryListProps = {
   onDelete: (id: number) => void;
   onTogglePin: (id: number) => void;
   onToggleExpand: (id: number) => void;
+  onStatus: (message: string) => void;
 };
 
 type IndexedItem = { item: ClipboardEntry; index: number };
@@ -79,6 +80,7 @@ export function HistoryList({
   onDelete,
   onTogglePin,
   onToggleExpand,
+  onStatus,
 }: HistoryListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const flatRows = useMemo(() => buildRows(items, query), [items, query]);
@@ -147,6 +149,7 @@ export function HistoryList({
             onDelete={() => onDelete(row.item.id)}
             onTogglePin={() => onTogglePin(row.item.id)}
             onToggleExpand={() => onToggleExpand(row.item.id)}
+            onStatus={onStatus}
           />
         );
       })}

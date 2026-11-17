@@ -832,6 +832,92 @@ mark {
     pointer-events: auto;
 }
 
+.history-image-zoomable {
+    position: relative;
+    cursor: zoom-in;
+}
+
+.history-image-zoom-hint {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(10, 14, 17, 0.78);
+    color: var(--text-soft);
+    font-size: 0.66rem;
+    padding: 3px 8px;
+    opacity: 0;
+    transition: opacity 150ms ease;
+    pointer-events: none;
+}
+
+.history-image-zoomable:hover .history-image-zoom-hint,
+.history-row-selected .history-image-zoom-hint {
+    opacity: 1;
+}
+
+.image-zoom-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(8, 11, 14, 0.82);
+    cursor: zoom-out;
+}
+
+.image-zoom-card {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border-strong);
+    background: #14181c;
+    box-shadow: var(--shadow);
+    padding: 12px;
+    cursor: default;
+}
+
+.image-zoom-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.image-zoom-spacer {
+    flex: 1;
+}
+
+.image-zoom-body {
+    display: grid;
+    place-items: center;
+    min-height: 120px;
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 12, 15, 0.6);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.image-zoom-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+}
+
+.image-zoom-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
 @media (max-width: 360px) {
     .overlay-root {
         padding: 0;

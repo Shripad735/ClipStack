@@ -208,6 +208,8 @@ fn main() {
             commands::update_settings,
             commands::hide_overlay,
             commands::export_history,
+            commands::save_image_item,
+            commands::reveal_image_item,
             commands::overlay_ready,
             commands::heartbeat,
             commands::get_runtime_info,

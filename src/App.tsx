@@ -342,6 +342,7 @@ function App() {
             onDelete={(id) => void handleDelete(id)}
             onTogglePin={(id) => void handlePin(id)}
             onToggleExpand={(id) => handleToggleExpand(id)}
+            onStatus={showToast}
           />
         </div>
       ) : (

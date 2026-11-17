@@ -195,6 +195,96 @@ pub async fn export_history(
     Ok(output_path.to_string_lossy().to_string())
 }
 
+/// Saves an image clipboard entry to the user's Pictures folder and returns the new path.
+#[tauri::command]
+pub async fn save_image_item(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<String, String> {
+    let entry = with_storage(&state, move |storage| storage.get_entry(id)).await?.ok_or_else(
+        || "clipboard item not found".to_string(),
+    )?;
+
+    if entry.kind != ClipboardEntryKind::Image {
+        return Err("only image entries can be saved as files".to_string());
+    }
+
+    let source_path = entry
+        .image_path
+        .clone()
+        .filter(|path| !path.trim().is_empty())
+        .ok_or_else(|| "image file missing for clipboard item".to_string())?;
+    let source = PathBuf::from(&source_path);
+    if !source.exists() {
+        return Err("image file no longer exists on disk".to_string());
+    }
+
+    let dimensions = match (entry.image_width, entry.image_height) {
+        (Some(width), Some(height)) => format!("{width}x{height}"),
+        _ => "image".to_string(),
+    };
+    let timestamp = crate::settings::current_timestamp_ms();
+    let file_name = format!("clipstack-{timestamp}-{id}-{dimensions}.png");
+    let target_dir = dirs::picture_dir()
+        .map(|dir| dir.join("ClipStack"))
+        .or_else(|| {
+            dirs::document_dir().map(|dir| dir.join("ClipStack Images"))
+        })
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let output_path = target_dir.join(file_name);
+
+    let path_for_task = output_path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Some(parent) = path_for_task.parent() {
+            fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        }
+        fs::copy(&source, &path_for_task).map_err(|error| error.to_string())?;
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+
+    log::info!("image entry {id} saved to {}", output_path.display());
+    Ok(output_path.to_string_lossy().to_string())
+}
+
+/// Reveals an image clipboard entry's file in Windows Explorer.
+#[tauri::command]
+pub async fn reveal_image_item(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<(), String> {
+    let entry = with_storage(&state, move |storage| storage.get_entry(id)).await?.ok_or_else(
+        || "clipboard item not found".to_string(),
+    )?;
+
+    let image_path = entry
+        .image_path
+        .clone()
+        .filter(|path| !path.trim().is_empty())
+        .ok_or_else(|| "image file missing for clipboard item".to_string())?;
+    let path = PathBuf::from(&image_path);
+    if !path.exists() {
+        return Err("image file no longer exists on disk".to_string());
+    }
+
+    #[cfg(windows)]
+    {
+        std::process::Command::new("explorer")
+            .arg("/select,")
+            .arg(&path)
+            .spawn()
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        Err("revealing files is only supported on Windows builds".to_string())
+    }
+}
+
 /// Called by the frontend once React has painted for the first time.
 #[tauri::command]
 pub fn overlay_ready(app: AppHandle, state: State<'_, AppState>) {
