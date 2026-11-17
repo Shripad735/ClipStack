@@ -45,6 +45,7 @@ function App() {
   const [statusMessage, setStatusMessage] = useState("");
   const [activeTab, setActiveTab] = useState<"history" | "snippets">("history");
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -82,6 +83,7 @@ function App() {
 
   const handleSelect = useEffectEvent(async (id: number) => {
     await copyItem(id);
+    setExpandedId(null);
     setQuery("");
   });
 
@@ -91,6 +93,14 @@ function App() {
 
   const handlePin = useEffectEvent(async (id: number) => {
     await togglePin(id);
+  });
+
+  const handleToggleExpand = useEffectEvent((id: number) => {
+    setExpandedId((current) => (current === id ? null : id));
+  });
+
+  const handleCollapseExpanded = useEffectEvent(() => {
+    setExpandedId(null);
   });
 
   const handleExport = useEffectEvent(async (format: "json" | "csv") => {
@@ -128,8 +138,17 @@ function App() {
           void handlePin(item.id);
         }
       },
-      onSpace: () => {},
+      onSpace: (index) => {
+        const item = filteredHistory[index];
+        if (item) {
+          handleToggleExpand(item.id);
+        }
+      },
       onEscape: () => {
+        if (expandedId !== null) {
+          handleCollapseExpanded();
+          return;
+        }
         void hideOverlay();
       },
     });
@@ -137,6 +156,17 @@ function App() {
   useEffect(() => {
     setSelectedIndex(0);
   }, [normalizedQuery, setSelectedIndex]);
+
+  // Collapse the Quick-Look preview when its item is filtered out or removed.
+  useEffect(() => {
+    if (expandedId === null) {
+      return;
+    }
+    const stillVisible = history.some((item) => item.id === expandedId);
+    if (!stillVisible) {
+      setExpandedId(null);
+    }
+  }, [history, expandedId]);
 
   useEffect(() => {
     const hideTimer = window.setTimeout(() => {
@@ -276,14 +306,20 @@ function App() {
         <button
           type="button"
           className={`ghost-button${activeTab === "history" ? " tab-active" : ""}`}
-          onClick={() => setActiveTab("history")}
+          onClick={() => {
+            setActiveTab("history");
+            setExpandedId(null);
+          }}
         >
           History
         </button>
         <button
           type="button"
           className={`ghost-button${activeTab === "snippets" ? " tab-active" : ""}`}
-          onClick={() => setActiveTab("snippets")}
+          onClick={() => {
+            setActiveTab("snippets");
+            setExpandedId(null);
+          }}
         >
           Snippets
         </button>
@@ -300,10 +336,12 @@ function App() {
             items={filteredHistory}
             query={normalizedQuery}
             selectedIndex={selectedIndex}
+            expandedId={expandedId}
             onHover={setSelectedIndex}
             onSelect={(id) => void handleSelect(id)}
             onDelete={(id) => void handleDelete(id)}
             onTogglePin={(id) => void handlePin(id)}
+            onToggleExpand={(id) => handleToggleExpand(id)}
           />
         </div>
       ) : (

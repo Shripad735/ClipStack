@@ -500,6 +500,27 @@ mark {
     -webkit-line-clamp: 2;
 }
 
+.history-row-expanded {
+    border-color: var(--accent);
+    background: rgba(123, 216, 143, 0.06);
+}
+
+.history-row-expanded .history-content {
+    display: block;
+    line-clamp: unset;
+    -webkit-line-clamp: unset;
+    max-height: 260px;
+    overflow-y: auto;
+    user-select: text;
+    cursor: text;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.history-row-expanded .history-image-preview-shell {
+    height: 220px;
+}
+
 .history-row-actions {
     display: flex;
     gap: 4px;

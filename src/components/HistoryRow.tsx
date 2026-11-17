@@ -6,10 +6,12 @@ type HistoryRowProps = {
   item: ClipboardEntry;
   query: string;
   isSelected: boolean;
+  isExpanded: boolean;
   onMouseEnter: () => void;
   onSelect: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
+  onToggleExpand: () => void;
 };
 
 type ContentType = "url" | "email" | "filepath" | "code" | "image" | "text";
@@ -224,14 +226,16 @@ export function HistoryRow({
   item,
   query,
   isSelected,
+  isExpanded,
   onMouseEnter,
   onSelect,
   onDelete,
   onTogglePin,
+  onToggleExpand,
 }: HistoryRowProps) {
   const meta = contentTypeMeta(item);
   const createdLabel = formatRelativeAge(item.createdAt);
-  const rowClassName = `history-row${isSelected ? " history-row-selected" : ""}`;
+  const rowClassName = `history-row${isSelected ? " history-row-selected" : ""}${isExpanded ? " history-row-expanded" : ""}`;
   const imageSrc = resolveClipboardImageSrc(item.imagePath, item.content);
   const imageDimensions = formatImageDimensions(item);
   const [imageFailed, setImageFailed] = useState(false);
@@ -240,12 +244,21 @@ export function HistoryRow({
     setImageFailed(false);
   }, [imageSrc, item.id]);
 
+  // When expanded, row clicks must not copy: the user is selecting text.
+  const handleRowClick = () => {
+    if (isExpanded) {
+      return;
+    }
+    onSelect();
+  };
+
   return (
     <article
       id={String(item.id)}
       className={rowClassName}
+      aria-expanded={isExpanded}
       onMouseEnter={onMouseEnter}
-      onClick={onSelect}
+      onClick={handleRowClick}
     >
       <div className="history-row-meta">
         <div className="history-row-meta-pills">
@@ -257,8 +270,33 @@ export function HistoryRow({
             <span className="pill pill-muted">{imageDimensions}</span>
           ) : null}
           <span className="pill timestamp-pill">{createdLabel}</span>
+          {isExpanded ? <span className="pill pill-muted">Preview</span> : null}
         </div>
         <div className="history-row-actions">
+          <button
+            type="button"
+            className="icon-button"
+            title={isExpanded ? "Collapse preview (Space/Esc)" : "Expand preview (Space)"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleExpand();
+            }}
+          >
+            {isExpanded ? "Less" : "More"}
+          </button>
+          {isExpanded ? (
+            <button
+              type="button"
+              className="icon-button"
+              title="Copy this item (Enter)"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelect();
+              }}
+            >
+              Copy
+            </button>
+          ) : null}
           <button
             type="button"
             className="icon-button"
@@ -282,7 +320,10 @@ export function HistoryRow({
         </div>
       </div>
 
-      <div className="history-row-content-wrapper">
+      <div
+        className="history-row-content-wrapper"
+        onClick={isExpanded ? (event) => event.stopPropagation() : undefined}
+      >
         {item.kind === "image" ? (
           <div className="history-image-preview-shell">
             {imageSrc && !imageFailed ? (

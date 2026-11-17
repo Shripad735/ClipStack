@@ -6,10 +6,12 @@ type HistoryListProps = {
   items: ClipboardEntry[];
   query: string;
   selectedIndex: number;
+  expandedId: number | null;
   onHover: (index: number) => void;
   onSelect: (id: number) => void;
   onDelete: (id: number) => void;
   onTogglePin: (id: number) => void;
+  onToggleExpand: (id: number) => void;
 };
 
 type IndexedItem = { item: ClipboardEntry; index: number };
@@ -71,10 +73,12 @@ export function HistoryList({
   items,
   query,
   selectedIndex,
+  expandedId,
   onHover,
   onSelect,
   onDelete,
   onTogglePin,
+  onToggleExpand,
 }: HistoryListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const flatRows = useMemo(() => buildRows(items, query), [items, query]);
@@ -137,10 +141,12 @@ export function HistoryList({
             item={row.item}
             query={query}
             isSelected={row.index === selectedIndex}
+            isExpanded={row.item.id === expandedId}
             onMouseEnter={() => onHover(row.index)}
             onSelect={() => onSelect(row.item.id)}
             onDelete={() => onDelete(row.item.id)}
             onTogglePin={() => onTogglePin(row.item.id)}
+            onToggleExpand={() => onToggleExpand(row.item.id)}
           />
         );
       })}
