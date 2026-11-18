@@ -666,7 +666,6 @@ mark {
 }
 
 .empty-state,
-.settings-panel,
 .status-banner {
     border-radius: 16px;
     border: 1px solid var(--border);
@@ -692,38 +691,196 @@ mark {
 .settings-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px;
+    gap: 10px;
+    padding: 2px 2px 6px;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    border: 0;
+    background: transparent;
 }
 
-.settings-group {
+.settings-card {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-card-head {
     display: grid;
-    gap: 4px;
+    gap: 2px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.settings-group h2,
-.settings-group p {
+.settings-card-head h2 {
     margin: 0;
-}
-
-.settings-group h2 {
-    font-size: 0.92rem;
-}
-
-.settings-group p {
-    color: var(--text-dim);
     font-size: 0.82rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #eef4ee;
 }
 
-.settings-panel label {
+.settings-card-head p {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 2px;
+    cursor: pointer;
+}
+
+.switch-row + .switch-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.switch-text {
     display: grid;
-    gap: 8px;
+    gap: 1px;
+    min-width: 0;
+}
+
+.switch-title {
+    color: #eef4ee;
+    font-size: 0.83rem;
+}
+
+.switch-desc {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+.switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 38px;
+    height: 22px;
+}
+
+.switch-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.switch-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: rgba(255, 255, 255, 0.08);
+    transition: background 150ms ease, border-color 150ms ease;
+    pointer-events: none;
+}
+
+.switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #9aa4ae;
+    transition: transform 150ms ease, background 150ms ease;
+}
+
+.switch-input:checked + .switch-track {
+    background: rgba(123, 216, 143, 0.35);
+    border-color: var(--accent);
+}
+
+.switch-input:checked + .switch-track .switch-thumb {
+    transform: translateX(16px);
+    background: var(--accent);
+}
+
+.switch-input:focus-visible + .switch-track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 2px;
+}
+
+.slider-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.slider-text {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.slider-title {
+    color: #eef4ee;
+    font-size: 0.83rem;
+}
+
+.slider-desc {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+}
+
+.slider-value {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.07);
     color: var(--text-soft);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 9px;
+    white-space: nowrap;
+}
+
+.slider-input {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.slider-scale {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-dim);
+    font-size: 0.66rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.settings-wide-button {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 0.8rem;
+}
+
+.settings-split-button {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
 }
 
 .settings-export-actions {
@@ -734,9 +891,11 @@ mark {
 
 .settings-hint {
     margin: 0;
+    padding: 0 4px;
     color: var(--text-dim);
     font-size: 0.74rem;
     letter-spacing: 0.01em;
+    text-align: center;
 }
 
 .snippets-panel {
@@ -896,21 +1055,6 @@ mark {
     font-weight: 600;
     pointer-events: none;
     z-index: 10;
-}
-
-.settings-panel input[type="number"] {
-    width: 100%;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: rgba(12, 17, 14, 0.84);
-    color: #eff8ef;
-    padding: 10px 12px;
-}
-
-.checkbox-row {
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    column-gap: 10px;
 }
 
 .status-banner {

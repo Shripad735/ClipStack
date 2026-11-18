@@ -21,6 +21,87 @@ type OverlayShellProps = PropsWithChildren<{
   onSettingsChange: (settings: AppSettings) => void;
 }>;
 
+type SwitchRowProps = {
+  title: string;
+  description?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+};
+
+function SwitchRow({ title, description, checked, onChange }: SwitchRowProps) {
+  return (
+    <label className="switch-row">
+      <span className="switch-text">
+        <span className="switch-title">{title}</span>
+        {description ? (
+          <span className="switch-desc">{description}</span>
+        ) : null}
+      </span>
+      <span className="switch">
+        <input
+          type="checkbox"
+          className="switch-input"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+        />
+        <span className="switch-track" aria-hidden="true">
+          <span className="switch-thumb" />
+        </span>
+      </span>
+    </label>
+  );
+}
+
+type SliderRowProps = {
+  title: string;
+  description: string;
+  value: string;
+  min: number;
+  max: number;
+  onDraft: (next: string) => void;
+  onCommit: () => void;
+};
+
+function SliderRow({
+  title,
+  description,
+  value,
+  min,
+  max,
+  onDraft,
+  onCommit,
+}: SliderRowProps) {
+  return (
+    <div className="slider-row">
+      <div className="slider-head">
+        <span className="slider-text">
+          <span className="slider-title">{title}</span>
+          <span className="slider-desc">{description}</span>
+        </span>
+        <span className="slider-value" aria-live="polite">
+          {value}
+        </span>
+      </div>
+      <input
+        type="range"
+        className="slider-input"
+        min={min}
+        max={max}
+        value={Number.parseInt(value, 10) || min}
+        aria-label={title}
+        onChange={(event) => onDraft(event.target.value)}
+        onPointerUp={onCommit}
+        onKeyUp={onCommit}
+        onBlur={onCommit}
+      />
+      <div className="slider-scale" aria-hidden="true">
+        <span>{min}</span>
+        <span>{max}</span>
+      </div>
+    </div>
+  );
+}
+
 export function OverlayShell({
   children,
   itemCount,
@@ -148,157 +229,126 @@ export function OverlayShell({
         </div>
 
         {isSettingsOpen ? (
-          <section className="settings-panel">
-            <div className="settings-group">
-              <h2>History</h2>
-              <p>Control how much clipboard history ClipStack keeps locally.</p>
-            </div>
-            <label>
-              History limit
-              <input
-                type="number"
+          <section className="settings-panel" aria-label="ClipStack settings">
+            <section className="settings-card" aria-labelledby="settings-storage-title">
+              <div className="settings-card-head">
+                <h2 id="settings-storage-title">Storage</h2>
+                <p>Control how much clipboard history ClipStack keeps locally.</p>
+              </div>
+              <SliderRow
+                title="History limit"
+                description="Maximum grouped entries kept on disk"
+                value={historyLimitDraft}
                 min={25}
                 max={500}
-                value={historyLimitDraft}
-                onChange={(event) => setHistoryLimitDraft(event.target.value)}
-                onBlur={commitHistoryLimit}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.currentTarget.blur();
-                  }
-                }}
+                onDraft={setHistoryLimitDraft}
+                onCommit={commitHistoryLimit}
               />
-            </label>
-            <label>
-              Retention days
-              <input
-                type="number"
+              <SliderRow
+                title="Retention"
+                description="Days unpinned entries are kept"
+                value={retentionDaysDraft}
                 min={1}
                 max={365}
-                value={retentionDaysDraft}
-                onChange={(event) => setRetentionDaysDraft(event.target.value)}
-                onBlur={commitRetentionDays}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.currentTarget.blur();
-                  }
-                }}
+                onDraft={setRetentionDaysDraft}
+                onCommit={commitRetentionDays}
               />
-            </label>
+            </section>
 
-            <div className="settings-group">
-              <h2>Behavior</h2>
-              <p>Choose how the panel behaves when you pick an item.</p>
-            </div>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
+            <section className="settings-card" aria-labelledby="settings-behavior-title">
+              <div className="settings-card-head">
+                <h2 id="settings-behavior-title">Behavior</h2>
+                <p>Choose how the panel behaves when you pick an item.</p>
+              </div>
+              <SwitchRow
+                title="Capture clipboard updates"
+                description="Watch Windows clipboard and store new entries"
                 checked={settings.captureEnabled}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    captureEnabled: event.target.checked,
-                  })
+                onChange={(next) =>
+                  onSettingsChange({ ...settings, captureEnabled: next })
                 }
               />
-              Capture clipboard updates
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
+              <SwitchRow
+                title="Launch on Windows login"
+                description="Start ClipStack in the background at boot"
                 checked={settings.launchOnLogin}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    launchOnLogin: event.target.checked,
-                  })
+                onChange={(next) =>
+                  onSettingsChange({ ...settings, launchOnLogin: next })
                 }
               />
-              Launch on Windows login
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
+              <SwitchRow
+                title="Paste into the active app"
+                description="Send Ctrl+V right after copying a selection"
                 checked={settings.pasteOnSelect}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    pasteOnSelect: event.target.checked,
-                  })
+                onChange={(next) =>
+                  onSettingsChange({ ...settings, pasteOnSelect: next })
                 }
               />
-              Paste selected item into the active app
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
+              <SwitchRow
+                title="Close panel after copy"
+                description="Hide the overlay once an item is picked"
                 checked={settings.hideAfterCopy}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    hideAfterCopy: event.target.checked,
-                  })
+                onChange={(next) =>
+                  onSettingsChange({ ...settings, hideAfterCopy: next })
                 }
               />
-              Close panel after selecting an item
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
+              <SwitchRow
+                title="Open on manual launch"
+                description="Show the panel when the app starts directly"
                 checked={settings.showOnLaunch}
-                onChange={(event) =>
-                  onSettingsChange({
-                    ...settings,
-                    showOnLaunch: event.target.checked,
-                  })
+                onChange={(next) =>
+                  onSettingsChange({ ...settings, showOnLaunch: next })
                 }
               />
-              Open panel when the app is launched manually
-            </label>
+            </section>
 
-            <div className="settings-group">
-              <h2>Maintenance</h2>
-              <p>Clean temporary history while keeping pinned items safe.</p>
-            </div>
-            <button
-              className="danger-button"
-              type="button"
-              onClick={onClearUnpinned}
-            >
-              Clear unpinned history
-            </button>
-            <div className="settings-export-actions">
+            <section className="settings-card" aria-labelledby="settings-maintenance-title">
+              <div className="settings-card-head">
+                <h2 id="settings-maintenance-title">Maintenance</h2>
+                <p>Clean temporary history while keeping pinned items safe.</p>
+              </div>
               <button
-                className="ghost-button"
+                className="danger-button settings-wide-button"
                 type="button"
-                onClick={() => onExportHistory("json")}
+                onClick={onClearUnpinned}
               >
-                Export JSON
+                Clear unpinned history
               </button>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => onExportHistory("csv")}
-              >
-                Export CSV
-              </button>
-            </div>
+              <div className="settings-export-actions">
+                <button
+                  className="ghost-button settings-split-button"
+                  type="button"
+                  onClick={() => onExportHistory("json")}
+                >
+                  Export JSON
+                </button>
+                <button
+                  className="ghost-button settings-split-button"
+                  type="button"
+                  onClick={() => onExportHistory("csv")}
+                >
+                  Export CSV
+                </button>
+              </div>
+            </section>
 
-            <div className="settings-group">
-              <h2>Diagnostics</h2>
-              <p>
-                ClipStack keeps a log of every show, start and error. Send it
-                along if the overlay ever stops responding.
-              </p>
-            </div>
-            <div className="settings-export-actions">
-              <button className="ghost-button" type="button" onClick={onOpenLogs}>
-                Open logs
-              </button>
-              <button className="ghost-button" type="button" onClick={onRestart}>
-                Restart app
-              </button>
-            </div>
+            <section className="settings-card" aria-labelledby="settings-diagnostics-title">
+              <div className="settings-card-head">
+                <h2 id="settings-diagnostics-title">Diagnostics</h2>
+                <p>
+                  ClipStack keeps a log of every show, start and error. Send
+                  it along if the overlay ever stops responding.
+                </p>
+              </div>
+              <div className="settings-export-actions">
+                <button className="ghost-button settings-split-button" type="button" onClick={onOpenLogs}>
+                  Open logs
+                </button>
+                <button className="ghost-button settings-split-button" type="button" onClick={onRestart}>
+                  Restart app
+                </button>
+              </div>
+            </section>
             {runtimeInfo ? (
               <p className="settings-hint">
                 ClipStack v{runtimeInfo.version}
