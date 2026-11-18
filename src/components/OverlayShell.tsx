@@ -98,29 +98,53 @@ export function OverlayShell({
         <header className="overlay-header" data-tauri-drag-region>
           <div className="header-title-group" data-tauri-drag-region>
             <h1 data-tauri-drag-region>ClipStack</h1>
+            <span
+              className="header-count"
+              title={`${itemCount} ${itemCount === 1 ? "item" : "items"} stored locally`}
+            >
+              {itemCount}
+            </span>
+            <span
+              className={`capture-dot${captureEnabled ? " capture-dot-on" : " capture-dot-off"}`}
+              title={captureEnabled ? "Clipboard capture is on" : "Clipboard capture is paused"}
+              aria-label={captureEnabled ? "Capture on" : "Capture paused"}
+              role="status"
+            />
           </div>
           <div className="header-actions">
-            <button className="ghost-button" type="button" onClick={onRefresh}>
-              Sync
+            <button
+              className="ghost-button header-icon-button"
+              type="button"
+              onClick={onRefresh}
+              title="Reload history from the database"
+              aria-label="Reload history"
+            >
+              <span aria-hidden="true" className="header-icon">⟳</span>
+              <span className="header-action-label">Sync</span>
             </button>
             <button
-              className="ghost-button"
+              className="ghost-button header-icon-button"
               type="button"
               onClick={onToggleSettings}
+              title={isSettingsOpen ? "Back to history" : "Open settings"}
+              aria-label={isSettingsOpen ? "Back to history" : "Open settings"}
             >
-              {isSettingsOpen ? "Back" : "Settings"}
+              <span aria-hidden="true" className="header-icon">⚙</span>
+              <span className="header-action-label">
+                {isSettingsOpen ? "Back" : "Settings"}
+              </span>
             </button>
           </div>
         </header>
 
-        <div className="header-meta">
-          <span>
-            {itemCount} {itemCount === 1 ? "item" : "items"}
+        <div className="header-status" aria-live="polite">
+          <span className="header-status-text">
+            {captureEnabled ? "Capture on" : "Capture paused"}
+            <span aria-hidden="true"> · </span>
+            {isDesktop ? "Desktop" : "Preview"}
+            {safeMode ? " · Safe mode" : null}
+            {isLoading ? " · Loading…" : null}
           </span>
-          <span>{captureEnabled ? "Capture on" : "Capture paused"}</span>
-          <span>{isDesktop ? "Desktop" : "Preview"}</span>
-          {safeMode ? <span>Safe mode</span> : null}
-          {isLoading ? <span>Loading...</span> : null}
         </div>
 
         {isSettingsOpen ? (

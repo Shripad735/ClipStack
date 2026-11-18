@@ -302,10 +302,12 @@ function App() {
       settings={settings}
       onSettingsChange={(next) => void updateSettings(next)}
     >
-      <div className="tab-strip">
+      <div className="tab-strip tab-segmented" role="tablist" aria-label="Panel view">
         <button
           type="button"
-          className={`ghost-button${activeTab === "history" ? " tab-active" : ""}`}
+          role="tab"
+          aria-selected={activeTab === "history"}
+          className={`ghost-button tab-segment${activeTab === "history" ? " tab-active" : ""}`}
           onClick={() => {
             setActiveTab("history");
             setExpandedId(null);
@@ -315,7 +317,9 @@ function App() {
         </button>
         <button
           type="button"
-          className={`ghost-button${activeTab === "snippets" ? " tab-active" : ""}`}
+          role="tab"
+          aria-selected={activeTab === "snippets"}
+          className={`ghost-button tab-segment${activeTab === "snippets" ? " tab-active" : ""}`}
           onClick={() => {
             setActiveTab("snippets");
             setExpandedId(null);
@@ -329,7 +333,10 @@ function App() {
           <SearchInput
             ref={inputRef}
             value={query}
+            resultCount={filteredHistory.length}
+            totalCount={history.length}
             onChange={setQuery}
+            onClear={() => setQuery("")}
             onKeyDown={onKeyDown}
           />
           <HistoryList

@@ -174,6 +174,67 @@ mark {
     flex-wrap: nowrap;
 }
 
+.header-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 22px;
+    margin-left: 8px;
+    padding: 0 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-soft);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.capture-dot {
+    width: 8px;
+    height: 8px;
+    margin-left: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.capture-dot-on {
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(123, 216, 143, 0.8);
+}
+
+.capture-dot-off {
+    background: var(--danger);
+    box-shadow: 0 0 6px rgba(255, 138, 122, 0.7);
+}
+
+.header-icon-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.header-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    min-height: 18px;
+    padding: 0 2px;
+}
+
+.header-status-text {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .header-meta span,
 .pill {
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -285,7 +346,7 @@ mark {
 
 .search-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 8px;
     border-radius: 12px;
@@ -294,9 +355,66 @@ mark {
     padding: 7px 9px;
 }
 
+.search-shell:focus-within {
+    border-color: var(--border-strong);
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.search-icon {
+    width: 15px;
+    height: 15px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+}
+
+.search-clear {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.search-clear:hover {
+    border-color: var(--border-strong);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.search-count {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 .tab-strip {
     display: flex;
     gap: 6px;
+}
+
+.tab-segmented {
+    gap: 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    padding: 3px;
+}
+
+.tab-segmented .tab-segment {
+    flex: 1;
+    border-color: transparent;
+    background: transparent;
+    text-align: center;
+}
+
+.tab-segmented .tab-segment + .tab-segment {
+    margin-left: 3px;
 }
 
 .tab-active {
@@ -316,10 +434,15 @@ mark {
 .search-input {
     border: 0;
     outline: 0;
+    min-width: 0;
     background: transparent;
     color: #f8fff3;
     font-size: 0.86rem;
     border-radius: 8px;
+}
+
+.search-input::-webkit-search-cancel-button {
+    display: none;
 }
 
 .search-input::placeholder,
@@ -927,15 +1050,15 @@ mark {
         border-radius: 0;
     }
 
-    .overlay-header {
-        flex-direction: column;
+    .header-action-label {
+        display: none;
     }
 
     .search-shell {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
     }
 
     .search-hint {
-        grid-column: 1 / -1;
+        display: none;
     }
 }
