@@ -96,6 +96,45 @@ pub async fn copy_item(app: AppHandle, state: State<'_, AppState>, id: i64) -> R
     Ok(())
 }
 
+/// Pastes an arbitrary snippet string: puts it on the clipboard, hides the
+/// overlay and auto-pastes according to the stored settings. Snippets live in
+/// the frontend's localStorage, so unlike copy_item this takes raw text.
+#[tauri::command]
+pub async fn paste_snippet(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    content: String,
+) -> Result<(), String> {
+    if content.trim().is_empty() {
+        return Err("snippet is empty".to_string());
+    }
+    let settings = with_storage(&state, |storage| storage.load_settings()).await?;
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut clipboard = arboard::Clipboard::new().map_err(|error| error.to_string())?;
+        clipboard
+            .set_text(content)
+            .map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+
+    if settings.hide_after_copy || settings.paste_on_select {
+        window::hide_overlay(&app, "paste-snippet")?;
+    }
+
+    if settings.paste_on_select {
+        thread::spawn(|| {
+            thread::sleep(Duration::from_millis(140));
+            if let Err(error) = send_ctrl_v() {
+                log::debug!("paste automation skipped: {error}");
+            }
+        });
+    }
+
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn toggle_pin(app: AppHandle, state: State<'_, AppState>, id: i64) -> Result<(), String> {
     with_storage(&state, move |storage| storage.toggle_pin(id)).await?;

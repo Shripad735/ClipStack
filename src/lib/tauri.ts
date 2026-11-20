@@ -169,6 +169,14 @@ export async function copyHistoryItem(id: number) {
   await invokeCommand("copy_item", { id });
 }
 
+export async function pasteSnippet(content: string) {
+  if (!isTauriRuntime()) {
+    throw new Error("Pasting is only available in the desktop app runtime.");
+  }
+
+  await invokeCommand("paste_snippet", { content });
+}
+
 export async function toggleHistoryPin(id: number) {
   if (!isTauriRuntime()) {
     return;

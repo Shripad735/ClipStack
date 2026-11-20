@@ -1200,6 +1200,104 @@ mark {
     z-index: 10;
 }
 
+.snippet-var-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.snippet-var-hint {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+}
+
+.var-chip {
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-soft);
+    font-size: 0.7rem;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    padding: 3px 9px;
+}
+
+.var-chip:hover {
+    border-color: var(--border-strong);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.snippets-save-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.snippets-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.snippet-search-shell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    padding: 6px 9px;
+}
+
+.snippet-search-shell:focus-within {
+    border-color: var(--border-strong);
+}
+
+.snippet-search-input {
+    border: 0;
+    outline: 0;
+    min-width: 0;
+    background: transparent;
+    color: #f8fff3;
+    font-size: 0.82rem;
+}
+
+.snippet-search-input::placeholder {
+    color: var(--text-dim);
+}
+
+.snippets-io {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.snippet-file-input {
+    display: none;
+}
+
+.snippet-edit-form {
+    display: grid;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    cursor: default;
+}
+
+.snippet-edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.snippet-insert-button {
+    border-color: rgba(123, 216, 143, 0.5);
+    color: var(--accent);
+}
+
 .status-banner {
     padding: 10px 12px;
     color: var(--text-soft);

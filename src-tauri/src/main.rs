@@ -202,6 +202,7 @@ fn main() {
             commands::get_history,
             commands::get_settings,
             commands::copy_item,
+            commands::paste_snippet,
             commands::toggle_pin,
             commands::delete_item,
             commands::clear_unpinned,
