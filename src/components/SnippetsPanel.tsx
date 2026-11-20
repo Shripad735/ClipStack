@@ -54,6 +54,7 @@ export function SnippetsPanel({ onStatus }: SnippetsPanelProps) {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
+    window.dispatchEvent(new Event("clipstack-snippets-changed"));
   }, [snippets]);
 
   const addSnippet = () => {

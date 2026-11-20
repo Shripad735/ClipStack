@@ -399,27 +399,83 @@ mark {
 }
 
 .tab-segmented {
-    gap: 0;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    padding: 3px;
+    gap: 4px;
+    border-radius: 14px;
+    border: 1px solid var(--border-strong);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)), var(--bg);
+    padding: 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .tab-segmented .tab-segment {
     flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
     border-color: transparent;
     background: transparent;
     text-align: center;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
+    color: var(--text-dim);
+    transition:
+        border-color 150ms ease,
+        background 150ms ease,
+        color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.tab-segmented .tab-segment:hover {
+    background: rgba(255, 255, 255, 0.055);
+    color: #eef4ee;
+}
+
+.tab-segmented .tab-segment:active {
+    transform: translateY(1px);
 }
 
 .tab-segmented .tab-segment + .tab-segment {
-    margin-left: 3px;
+    margin-left: 0;
+}
+
+.tab-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.tab-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-soft);
+    font-size: 0.68rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
 }
 
 .tab-active {
-    border-color: var(--accent);
-    background: var(--accent-soft);
+    border-color: rgba(123, 216, 143, 0.55);
+    background: linear-gradient(180deg, rgba(123, 216, 143, 0.2), rgba(123, 216, 143, 0.1));
+    color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(123, 216, 143, 0.15), 0 4px 14px rgba(123, 216, 143, 0.12);
+}
+
+.tab-active .tab-count {
+    border-color: rgba(123, 216, 143, 0.5);
+    background: rgba(123, 216, 143, 0.16);
+    color: var(--accent);
 }
 
 .history-pane {

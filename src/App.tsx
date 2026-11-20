@@ -24,6 +24,19 @@ import {
   type RuntimeInfo,
 } from "./lib/tauri";
 
+function readSnippetCount() {
+  try {
+    const raw = localStorage.getItem("clipstack.snippets.v1");
+    if (!raw) {
+      return 0;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 function App() {
   const {
     history,
@@ -46,6 +59,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<"history" | "snippets">("history");
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [snippetCount, setSnippetCount] = useState(() => readSnippetCount());
   const inputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -156,6 +170,18 @@ function App() {
   useEffect(() => {
     setSelectedIndex(0);
   }, [normalizedQuery, setSelectedIndex]);
+
+  // Keep the Snippets tab badge in sync with the panel's localStorage store.
+  useEffect(() => {
+    const refreshSnippetCount = () => setSnippetCount(readSnippetCount());
+    refreshSnippetCount();
+    window.addEventListener("clipstack-snippets-changed", refreshSnippetCount);
+    window.addEventListener("storage", refreshSnippetCount);
+    return () => {
+      window.removeEventListener("clipstack-snippets-changed", refreshSnippetCount);
+      window.removeEventListener("storage", refreshSnippetCount);
+    };
+  }, []);
 
   // Collapse the Quick-Look preview when its item is filtered out or removed.
   useEffect(() => {
@@ -308,24 +334,44 @@ function App() {
           role="tab"
           aria-selected={activeTab === "history"}
           className={`ghost-button tab-segment${activeTab === "history" ? " tab-active" : ""}`}
+          title={`${history.length} clipboard ${history.length === 1 ? "item" : "items"}`}
           onClick={() => {
             setActiveTab("history");
             setExpandedId(null);
           }}
         >
-          History
+          <svg className="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 4a8 8 0 1 0 7.7 10h-2.1A6 6 0 1 1 12 6v4l4.5 2.7.8-1.3L13.5 9V4H12Zm1 0h4v4h-1.5V5.5H13V4Z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>History</span>
+          <span className="tab-count" aria-hidden="true">
+            {history.length}
+          </span>
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "snippets"}
           className={`ghost-button tab-segment${activeTab === "snippets" ? " tab-active" : ""}`}
+          title={`${snippetCount} saved ${snippetCount === 1 ? "snippet" : "snippets"}`}
           onClick={() => {
             setActiveTab("snippets");
             setExpandedId(null);
           }}
         >
-          Snippets
+          <svg className="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.2L5 21V4a1 1 0 0 1 1-1Zm1 2v13.7l5-3 5 3V5H7Z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>Snippets</span>
+          <span className="tab-count" aria-hidden="true">
+            {snippetCount}
+          </span>
         </button>
       </div>
       {activeTab === "history" ? (
