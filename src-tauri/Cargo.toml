@@ -1,6 +1,6 @@
 [package]
 name = "clipstack"
-version = "1.2.4"
+version = "1.2.5"
 description = "A fast, fully local clipboard manager for Windows."
 authors = ["OpenAI Codex"]
 edition = "2021"
