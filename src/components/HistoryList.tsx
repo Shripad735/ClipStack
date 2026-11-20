@@ -5,6 +5,9 @@ import { HistoryRow } from "./HistoryRow";
 type HistoryListProps = {
   items: ClipboardEntry[];
   query: string;
+  grouped: boolean;
+  filtersActive: boolean;
+  onClearFilters: () => void;
   selectedIndex: number;
   expandedId: number | null;
   onHover: (index: number) => void;
@@ -29,9 +32,8 @@ function isSameLocalDay(timestamp: number, comparison: Date) {
   );
 }
 
-function buildRows(items: ClipboardEntry[], query: string): FlatRow[] {
-  const shouldGroup = query.trim().length === 0;
-  if (!shouldGroup) {
+function buildRows(items: ClipboardEntry[], grouped: boolean): FlatRow[] {
+  if (!grouped) {
     return items.map((item, index) => ({
       type: "item",
       key: `item-${item.id}`,
@@ -73,6 +75,9 @@ function buildRows(items: ClipboardEntry[], query: string): FlatRow[] {
 export function HistoryList({
   items,
   query,
+  grouped,
+  filtersActive,
+  onClearFilters,
   selectedIndex,
   expandedId,
   onHover,
@@ -83,7 +88,7 @@ export function HistoryList({
   onStatus,
 }: HistoryListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const flatRows = useMemo(() => buildRows(items, query), [items, query]);
+  const flatRows = useMemo(() => buildRows(items, grouped), [items, grouped]);
 
   // Scroll the keyboard-selected row into view without jumping
   useEffect(() => {
@@ -111,10 +116,28 @@ export function HistoryList({
   if (items.length === 0) {
     return (
       <div className="empty-state">
-        <p>No clipboard items match yet.</p>
-        <span>
-          Copy text or images anywhere on Windows and they will appear here.
-        </span>
+        {filtersActive ? (
+          <>
+            <p>No matches for these filters.</p>
+            <span>
+              Try a different search term or filter combination.
+            </span>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={onClearFilters}
+            >
+              Clear search &amp; filters
+            </button>
+          </>
+        ) : (
+          <>
+            <p>No clipboard items match yet.</p>
+            <span>
+              Copy text or images anywhere on Windows and they will appear here.
+            </span>
+          </>
+        )}
       </div>
     );
   }

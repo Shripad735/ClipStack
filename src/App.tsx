@@ -8,11 +8,13 @@ import {
   useState,
 } from "react";
 import { HistoryList } from "./components/HistoryList";
+import { FilterBar } from "./components/FilterBar";
 import { OverlayShell } from "./components/OverlayShell";
 import { SearchInput } from "./components/SearchInput";
 import { SnippetsPanel } from "./components/SnippetsPanel";
 import { useClipboardHistory } from "./hooks/useClipboardHistory";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
+import { getEntryType, type EntryFilter, type SortMode } from "./lib/entryType";
 import {
   desktopListen,
   fetchRuntimeInfo,
@@ -60,6 +62,9 @@ function App() {
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [snippetCount, setSnippetCount] = useState(() => readSnippetCount());
+  const [typeFilter, setTypeFilter] = useState<EntryFilter>("all");
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("recent");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -81,19 +86,53 @@ function App() {
     [history],
   );
   const filteredHistory = useMemo(() => {
+    let searched: typeof history;
     if (!normalizedQuery) {
-      return history;
+      searched = history;
+    } else {
+      const exactMatches = history.filter((item) =>
+        item.content.toLowerCase().includes(normalizedQuery),
+      );
+      searched =
+        exactMatches.length > 0
+          ? exactMatches
+          : fuse.search(normalizedQuery).map((match) => match.item);
     }
 
-    const exactMatches = history.filter((item) =>
-      item.content.toLowerCase().includes(normalizedQuery),
-    );
-    if (exactMatches.length > 0) {
-      return exactMatches;
-    }
+    const typed =
+      typeFilter === "all"
+        ? searched
+        : searched.filter((item) => getEntryType(item) === typeFilter);
 
-    return fuse.search(normalizedQuery).map((match) => match.item);
-  }, [fuse, history, normalizedQuery]);
+    const pinned =
+      pinnedOnly ? typed.filter((item) => item.pinned) : typed;
+
+    if (sortMode === "top") {
+      return [...pinned].sort(
+        (a, b) => b.copyCount - a.copyCount || b.createdAt - a.createdAt,
+      );
+    }
+    return pinned;
+  }, [fuse, history, normalizedQuery, typeFilter, pinnedOnly, sortMode]);
+
+  const historyGrouped =
+    normalizedQuery.length === 0 &&
+    typeFilter === "all" &&
+    !pinnedOnly &&
+    sortMode === "recent";
+
+  const historyFiltersActive =
+    normalizedQuery.length > 0 ||
+    typeFilter !== "all" ||
+    pinnedOnly ||
+    sortMode !== "recent";
+
+  const handleClearHistoryFilters = useEffectEvent(() => {
+    setQuery("");
+    setTypeFilter("all");
+    setPinnedOnly(false);
+    setSortMode("recent");
+  });
 
   const handleSelect = useEffectEvent(async (id: number) => {
     await copyItem(id);
@@ -169,7 +208,7 @@ function App() {
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [normalizedQuery, setSelectedIndex]);
+  }, [normalizedQuery, typeFilter, pinnedOnly, sortMode, setSelectedIndex]);
 
   // Keep the Snippets tab badge in sync with the panel's localStorage store.
   useEffect(() => {
@@ -385,9 +424,20 @@ function App() {
             onClear={() => setQuery("")}
             onKeyDown={onKeyDown}
           />
+          <FilterBar
+            activeType={typeFilter}
+            onTypeChange={setTypeFilter}
+            pinnedOnly={pinnedOnly}
+            onPinnedToggle={() => setPinnedOnly((current) => !current)}
+            sortMode={sortMode}
+            onSortChange={setSortMode}
+          />
           <HistoryList
             items={filteredHistory}
             query={normalizedQuery}
+            grouped={historyGrouped}
+            filtersActive={historyFiltersActive}
+            onClearFilters={() => handleClearHistoryFilters()}
             selectedIndex={selectedIndex}
             expandedId={expandedId}
             onHover={setSelectedIndex}

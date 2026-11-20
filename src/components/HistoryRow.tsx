@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ClipboardEntry } from "../lib/tauri";
+import { getEntryType } from "../lib/entryType";
 import {
   resolveClipboardImageSrc,
   revealImageItem,
@@ -73,46 +74,8 @@ function ImageIcon() {
 }
 
 function detectType(item: ClipboardEntry): ContentType {
-  if (item.kind === "image") {
-    return "image";
-  }
-
-  const trimmed = item.content.trim();
-  if (!trimmed) {
-    return "text";
-  }
-
-  if (/^https?:\/\/[^\s]+$/i.test(trimmed)) {
-    return "url";
-  }
-
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-    return "email";
-  }
-
-  if (
-    /^[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\?)+$/.test(trimmed) ||
-    /^\/(?:[^/\0]+\/?)+$/.test(trimmed)
-  ) {
-    return "filepath";
-  }
-
-  const codeSignals = [
-    /```/,
-    /\b(function|const|let|class|import|export|SELECT|INSERT|UPDATE|DELETE|CREATE)\b/,
-    /[{}()[\];<>]/,
-  ];
-  const hasCodeSignal = codeSignals.some((pattern) =>
-    pattern.test(item.content),
-  );
-  if (
-    (item.content.includes("\n") && hasCodeSignal) ||
-    (hasCodeSignal && item.content.length > 40)
-  ) {
-    return "code";
-  }
-
-  return "text";
+  const entryType = getEntryType(item);
+  return entryType === "path" ? "filepath" : entryType;
 }
 
 function contentTypeMeta(item: ClipboardEntry) {
@@ -324,6 +287,14 @@ export function HistoryRow({
           </span>
           {imageDimensions ? (
             <span className="pill pill-muted">{imageDimensions}</span>
+          ) : null}
+          {item.copyCount > 1 ? (
+            <span
+              className="pill pill-muted"
+              title={`Pasted ${item.copyCount} times`}
+            >
+              ×{item.copyCount}
+            </span>
           ) : null}
           <span className="pill timestamp-pill">{createdLabel}</span>
           {isExpanded ? <span className="pill pill-muted">Preview</span> : null}
